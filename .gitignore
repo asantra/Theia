@@ -1,0 +1,12 @@
+*.cmake
+*.bin
+*.o
+*.log
+*.includecache
+*.internal
+*.make
+*.check_cache
+*.marks
+Makefile
+*.a
+
