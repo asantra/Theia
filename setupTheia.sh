@@ -58,8 +58,8 @@ export INSTALL_PATH=$PWD/../install/bin
 
 ### cmake and install
 cd ../build
-cmake ../Theia
-cmake --build . --target install 
+cmake3 ../Theia
+cmake3 --build . --target install 
 
 ### insert the path of libraries
 export PATH=$PATH:${INSTALL_PATH}
