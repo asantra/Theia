@@ -22,7 +22,6 @@ add_library(Particles SHARED ${SRC} Particles_Dict.cxx)
 target_link_libraries(Particles PUBLIC ${ROOT_LIBRARIES})
 
 target_include_directories (Particles PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-#target_include_directories (Particles PUBLIC ${THEIAPATH}/Common/Particles/source)
 
 
 install(TARGETS Particles DESTINATION ${CMAKE_SOURCE_DIR}/../install/lib)

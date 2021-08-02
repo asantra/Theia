@@ -18,6 +18,7 @@ file(GLOB SRC
     "src/*.cxx"
 )
 
+### generate root dictionary, essential for building shared library
 ROOT_GENERATE_DICTIONARY(ConfigReader_Dict ConfigReader.h LINKDEF ConfigReader/ConfigReader_LinkDef.h)
 add_library(ConfigReader SHARED ${SRC} ConfigReader_Dict.cxx)
 

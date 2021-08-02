@@ -16,6 +16,7 @@ file(GLOB SRC
     "src/*.cxx"
 )
 
+### generate root dictionary, essential for building shared library
 ROOT_GENERATE_DICTIONARY(Logger_Dict LUXELog.h LINKDEF Logger/LUXELog_LinkDef.h)
 add_library(Logger SHARED ${SRC} Logger_Dict.cxx)
 
