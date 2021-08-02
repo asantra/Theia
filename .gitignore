@@ -9,4 +9,7 @@
 *.marks
 Makefile
 *.a
+*.dylib
+*.DS_Store
+*.code-workspace
 
