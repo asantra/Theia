@@ -1,14 +1,14 @@
-#include "Layer.h"
+#include "TrkLayer.h"
 
-ClassImp(Layer)
+ClassImp(TrkLayer)
 ClassImp(BeamPipe)
 
-Double_t Layer::fgDefEff = 1.0;
+Double_t TrkLayer::fgDefEff = 1.0;
 
-Layer::~Layer() {}
+TrkLayer::~TrkLayer() {}
 
 //__________________________________________________________________________
-Layer::Layer(const char *name) 
+TrkLayer::TrkLayer(const char *name) 
   : TNamed(name,name)
   ,fZ(0)
   ,fThickness(0)
@@ -25,7 +25,7 @@ Layer::Layer(const char *name)
   ,fClMC()
   ,fClBg("Cluster",5)
   ,fTrCorr()
-  ,fTrMC("Probe",5)
+  ,fTrMC("TrkProbe",5)
   ,fMaterial(0)
 {
   for (int i=0;i<kMaxAccReg;i++) {
@@ -39,7 +39,7 @@ Layer::Layer(const char *name)
 }
 
 //__________________________________________________________________________
-void Layer::Reset() 
+void TrkLayer::Reset() 
 {
   fTrCorr.Reset();
   fClCorr.Reset();
@@ -50,18 +50,18 @@ void Layer::Reset()
 }
 
 //__________________________________________________________________________
-Probe* Layer::AddMCTrack(Probe* src) 
+TrkProbe* TrkLayer::AddMCTrack(TrkProbe* src) 
 {
   int ntr = GetNMCTracks(); 
-  Probe* prb = 0;
-  if (src) prb = new(fTrMC[ntr]) Probe(*src);
-  else     prb = new(fTrMC[ntr]) Probe();
+  TrkProbe* prb = 0;
+  if (src) prb = new(fTrMC[ntr]) TrkProbe(*src);
+  else     prb = new(fTrMC[ntr]) TrkProbe();
   if (!IsDead()) prb->ResetHit(GetActiveID());
   return prb;
 }
 
 //__________________________________________________________________________
-void Layer::Print(Option_t *opt) const
+void TrkLayer::Print(Option_t *opt) const
 {
   printf("Lr%3d(A%3d) %15s %+7.1f<Z<%+7.1f X2X0=%.3e XRho=%.3e SigX=%.3e SigY=%.3e Eff:%4.2f RMin:%.3e RMax:%.3e ",
 	 GetUniqueID(),fActiveID,GetName(), fZ-fThickness/2,fZ+fThickness/2, fx2X0,fXRho,fXRes[0],fYRes[0],fEff,fRMin[0],fRMax[0]);
@@ -81,10 +81,10 @@ void Layer::Print(Option_t *opt) const
 }
 
 //__________________________________________________________________________
-Probe* Layer::GetWinnerMCTrack()  
+TrkProbe* TrkLayer::GetWinnerMCTrack()  
 {
   if (!fTrMC.IsSorted()) fTrMC.Sort();
-  Probe* win = fTrMC.GetEntries() ? (Probe*)fTrMC[0]:0;
+  TrkProbe* win = fTrMC.GetEntries() ? (TrkProbe*)fTrMC[0]:0;
   if (!win || win->IsKilled()) return 0;
   return win;
 }

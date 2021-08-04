@@ -1,5 +1,5 @@
-#include "Detector.h"
-#include "Probe.h"
+#include "TrkDetector.h"
+#include "TrkProbe.h"
 #include "DrawProbe.h"
 
 using namespace std;
@@ -7,7 +7,7 @@ using namespace std;
 typedef map<int,TString>             TMapiTS;
 TMapiTS         islayers = { {1,"L1"}, {3,"L2"}, {5,"L3"}, {7,"L4"} };
 
-Detector* det = 0;
+TrkDetector* det = 0;
 vector<double>* zlayer = new vector<double>;
 
 bool islayer(double z)
@@ -20,7 +20,7 @@ bool islayer(double z)
 	return false;
 }
 
-TPolyLine3D* DrawProbe::TrackLine3d(const Probe* source, Double_t zMax, Double_t step=1, Color_t col=kBlack)
+TPolyLine3D* DrawProbe::TrackLine3d(const TrkProbe* source, Double_t zMax, Double_t step=1, Color_t col=kBlack)
 {
 	double xyz[3];
 	source->GetXYZ(xyz);
@@ -30,7 +30,7 @@ TPolyLine3D* DrawProbe::TrackLine3d(const Probe* source, Double_t zMax, Double_t
 		printf("bad limits\n");
 		return 0;
 	}
-	Probe tmp(*source);
+	TrkProbe tmp(*source);
 	double xp[nZ],yp[nZ],zp[nZ];
 	xp[0] = xyz[0];
 	yp[0] = xyz[1];
@@ -53,9 +53,9 @@ TPolyLine3D* DrawProbe::TrackLine3d(const Probe* source, Double_t zMax, Double_t
 }
 
 
-TPolyMarker3D* DrawProbe::TrackMarker3d(const Probe* source, double zmin, double zmax, double zstep, Color_t col=kBlack)
+TPolyMarker3D* DrawProbe::TrackMarker3d(const TrkProbe* source, double zmin, double zmax, double zstep, Color_t col=kBlack)
 {
-	Probe tmp(*source);
+	TrkProbe tmp(*source);
 	int nZ = (int)(zmax-zmin)/zstep;
 	double xp[nZ],yp[nZ],zp[nZ];
 	double xyz[3];

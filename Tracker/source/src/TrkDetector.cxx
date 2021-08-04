@@ -2,35 +2,35 @@
 #include <TRandom.h>
 #include <TLorentzVector.h>
 #include <TGenPhaseSpace.h>
-#include "Detector.h"
+#include "TrkDetector.h"
 #include "LUXELog.h"
 
-ClassImp(Detector)
+ClassImp(TrkDetector)
 
-const Double_t Detector::kMassP  = 0.938;
-const Double_t Detector::kMassK  = 0.4937;
-const Double_t Detector::kMassPi = 0.1396;
-const Double_t Detector::kMassMu = 0.1057;
-const Double_t Detector::kMassE  = 0.0005;
+const Double_t TrkDetector::kMassP  = 0.938;
+const Double_t TrkDetector::kMassK  = 0.4937;
+const Double_t TrkDetector::kMassPi = 0.1396;
+const Double_t TrkDetector::kMassMu = 0.1057;
+const Double_t TrkDetector::kMassE  = 0.0005;
 
-const Double_t Detector::fgkFldEps = 1.e-4;
+const Double_t TrkDetector::fgkFldEps = 1.e-4;
 
-Detector::Detector(const char *name, const char *title) 
+TrkDetector::TrkDetector(const char *name, const char *title) 
 :  TNamed(name,title)
-  ,fNLayers(0)
-  ,fNActiveLayers(0)
-  ,fNActiveLayersITS(0)
-  ,fNActiveLayersMS(0)
-  ,fNActiveLayersTR(0)
-  ,fLastActiveLayerITS(0)
-  ,fLastActiveLayer(0)
-  ,fLastActiveLayerTracked(0)
-  ,fLayers()
+  ,fNTrkLayers(0)
+  ,fNActiveTrkLayers(0)
+  ,fNActiveTrkLayersITS(0)
+  ,fNActiveTrkLayersMS(0)
+  ,fNActiveTrkLayersTR(0)
+  ,fLastActiveTrkLayerITS(0)
+  ,fLastActiveTrkLayer(0)
+  ,fLastActiveTrkLayerTracked(0)
+  ,fTrkLayers()
   ,fBeamPipe(0)
   ,fVtx(0)
   ,fMaterials()
   ,fMagFieldID(kMagAlice)
-  ,fProbe()
+  ,fTrkProbe()
   ,fExternalInput(kFALSE)
   ,fIncludeVertex(kTRUE)
   ,fApplyBransonPCorrection(0.1)
@@ -73,29 +73,29 @@ Detector::Detector(const char *name, const char *title)
   //
   // default constructor
   //
-  //  fLayers = new TObjArray();
+  //  fTrkLayers = new TObjArray();
   fRefVtx[0] = fRefVtx[1] = fRefVtx[2] = 0;
 }
 
-Detector::Detector() {}
-Detector::~Detector() { // 
+TrkDetector::TrkDetector() {}
+TrkDetector::~TrkDetector() { // 
   // virtual destructor
   //
-  //  delete fLayers;
+  //  delete fTrkLayers;
   delete fdNdY;
   delete fdNdPt;
 }
 
 
-void Detector::Print(const Option_t *opt) const
+void TrkDetector::Print(const Option_t *opt) const
 {
   // Prints the detector layout
-  printf("Detector %s: \"%s\"\n",GetName(),GetTitle());
-  for (Int_t i = 0; i<fLayers.GetEntries(); i++) GetLayer(i)->Print(opt);
+  printf("TrkDetector %s: \"%s\"\n",GetName(),GetTitle());
+  for (Int_t i = 0; i<fTrkLayers.GetEntries(); i++) GetTrkLayer(i)->Print(opt);
   if (fBeamPipe) fBeamPipe->Print(opt);
 }
 
-Double_t Detector::ThetaMCS ( Double_t mass, Double_t radLength, Double_t momentum ) const
+Double_t TrkDetector::ThetaMCS ( Double_t mass, Double_t radLength, Double_t momentum ) const
 {
   //
   // returns the Multiple Couloumb scattering angle (compare PDG boolet, 2010, equ. 27.14)
@@ -108,7 +108,7 @@ Double_t Detector::ThetaMCS ( Double_t mass, Double_t radLength, Double_t moment
 }
 
 //__________________________________________________________________________
-void Detector::ReadMaterials(const char* fnam)
+void TrkDetector::ReadMaterials(const char* fnam)
 {
   // Read materials description from the external file
   //
@@ -209,7 +209,7 @@ void Detector::ReadMaterials(const char* fnam)
 }
 
 //__________________________________________________________________________
-void Detector::ReadSetup(const char* setup, const char* materials)
+void TrkDetector::ReadSetup(const char* setup, const char* materials)
 {
   // load setup from external file
   ReadMaterials(materials);
@@ -257,7 +257,7 @@ void Detector::ReadSetup(const char* setup, const char* materials)
   //
   if ( (narg=inp->FindEntry("vertex","","ffff|",1,1))<0 ) printf("No vertex found in the setup %s\n",setup);
   else {
-    fVtx = AddLayer("vtx","vertex",inp->GetArgF(0),0,0,inp->GetArgF(1), inp->GetArgF(2),inp->GetArgF(3));
+    fVtx = AddTrkLayer("vtx","vertex",inp->GetArgF(0),0,0,inp->GetArgF(1), inp->GetArgF(2),inp->GetArgF(3));
   }
   //
   //
@@ -266,7 +266,7 @@ void Detector::ReadSetup(const char* setup, const char* materials)
   while ( (narg=inp->FindEntry("dummy","","aaff|",0,1))>0 ) {
     mat = GetMaterial(inp->GetArg(1,"U"));
     if (!mat) {printf("Material %s is not defined\n",inp->GetArg(1,"U")); exit(1);}
-    Layer* lr = AddLayer("dummy", inp->GetArg(0,"U"),  inp->GetArgF(2), mat->GetRadLength(), mat->GetDensity(), inp->GetArgF(3));
+    TrkLayer* lr = AddTrkLayer("dummy", inp->GetArg(0,"U"),  inp->GetArgF(2), mat->GetRadLength(), mat->GetDensity(), inp->GetArgF(3));
     lr->SetMaterial(mat);
     lr->SetDead(kTRUE);
   }
@@ -276,7 +276,7 @@ void Detector::ReadSetup(const char* setup, const char* materials)
   while ( (narg=inp->FindEntry("absorber","","aaff|",0,1))>0 ) {
     mat = GetMaterial(inp->GetArg(1,"U"));
     if (!mat) {printf("Material %s is not defined\n",inp->GetArg(1,"U")); exit(1);}
-    Layer* lr = AddLayer("abs", inp->GetArg(0,"U"),  inp->GetArgF(2), mat->GetRadLength(), mat->GetDensity(), inp->GetArgF(3));
+    TrkLayer* lr = AddTrkLayer("abs", inp->GetArg(0,"U"),  inp->GetArgF(2), mat->GetRadLength(), mat->GetDensity(), inp->GetArgF(3));
     lr->SetMaterial(mat);
     lr->SetDead(kTRUE);
   }
@@ -285,17 +285,17 @@ void Detector::ReadSetup(const char* setup, const char* materials)
   //
   inp->Rewind();
   TString fmtAct = "aaffff*fff";
-  for (int i=0;i<Layer::kMaxAccReg-1;i++) fmtAct += "fff";
+  for (int i=0;i<TrkLayer::kMaxAccReg-1;i++) fmtAct += "fff";
   while ( (narg=inp->FindEntry("activelayer",0,fmtAct.Data(),0,1))>0 ) {
     // expect format "activelayer:type	NAME MATERIAL Z	DZ sigmaX sigmaZ [eff RMin RMax] [sigmaX1 sigmaY1 RMax1] ...  [sigmaX4 sigmaYN RMaxN]
     // the optional triplets [sigmaXk sigmaYk RMaxk] allow to define regions with different resolutions and eff, max possible N is 
-    // Layer::kMaxAccReg-1
+    // TrkLayer::kMaxAccReg-1
     mat = GetMaterial(inp->GetArg(1,"U"));
     double eff = narg > 6 ? inp->GetArgF(6) : 1.0;
     double rmn = narg > 7 ? inp->GetArgF(7) : 0.0;
     double rmx = narg > 8 ? inp->GetArgF(8) : 1e9;    
     if (!mat) {printf("Material %s is not defined\n",inp->GetArg(1,"U")); exit(1);}
-    Layer* lr = AddLayer(inp->GetModifier(), inp->GetArg(0,"U"),  inp->GetArgF(2),  
+    TrkLayer* lr = AddTrkLayer(inp->GetModifier(), inp->GetArg(0,"U"),  inp->GetArgF(2),  
 			       mat->GetRadLength(), mat->GetDensity(), 
 			       inp->GetArgF(3), inp->GetArgF(4), inp->GetArgF(5), eff);    
     lr->SetRMin(rmn);
@@ -309,8 +309,8 @@ void Detector::ReadSetup(const char* setup, const char* materials)
 	exit(1);
       }
       int nBloc = nExtra/3;
-      if (nBloc>=Layer::kMaxAccReg) {
-	printf("ReadSetup: number of extra regions in activelayer %d should not exceed %d\n",nBloc,Layer::kMaxAccReg-1);
+      if (nBloc>=TrkLayer::kMaxAccReg) {
+	printf("ReadSetup: number of extra regions in activelayer %d should not exceed %d\n",nBloc,TrkLayer::kMaxAccReg-1);
 	printf("%s\n",inp->GetLastBuffer());
 	exit(1);
       }
@@ -365,57 +365,57 @@ void Detector::ReadSetup(const char* setup, const char* materials)
     TGeoGlobalMagField::Instance()->Lock();
   }
   //
-  ClassifyLayers();
+  ClassifyTrkLayers();
   //  BookControlHistos();
   //
 }
 
 //__________________________________________________________________________
-Layer* Detector::AddLayer(const char* type, const char *name, Float_t zPos, Float_t radL, Float_t density, 
+TrkLayer* TrkDetector::AddTrkLayer(const char* type, const char *name, Float_t zPos, Float_t radL, Float_t density, 
 				      Float_t thickness, Float_t xRes, Float_t yRes, Float_t eff, Material* mat) 
 {
   //
   // Add additional layer to the list of layers (ordered by z position)
   // 
-  Layer *newLayer = GetLayer(name);
+  TrkLayer *newTrkLayer = GetTrkLayer(name);
   //
-  if (!newLayer) {
+  if (!newTrkLayer) {
     TString types = type;
     types.ToLower();
-    newLayer = new Layer(name);
-    newLayer->SetZ(zPos);
-    newLayer->SetThickness(thickness);
-    newLayer->SetX2X0( radL>0 ? thickness*density/radL : 0);
-    newLayer->SetXTimesRho(thickness*density);
-    newLayer->SetXRes(xRes);
-    newLayer->SetYRes(yRes);
-    newLayer->SetLayerEff(eff);
-    if      (types=="vt")   newLayer->SetType(Layer::kITS);
-    else if (types=="ms")   newLayer->SetType(Layer::kMS);
-    else if (types=="tr")   newLayer->SetType(Layer::kTRIG);
-    else if (types=="vtx")  {newLayer->SetType(Layer::kVTX); }
-    else if (types=="abs")  {newLayer->SetType(Layer::kABS); newLayer->SetDead(kTRUE); }
-    else if (types=="dummy")  {newLayer->SetType(Layer::kDUMMY); newLayer->SetDead(kTRUE); }
+    newTrkLayer = new TrkLayer(name);
+    newTrkLayer->SetZ(zPos);
+    newTrkLayer->SetThickness(thickness);
+    newTrkLayer->SetX2X0( radL>0 ? thickness*density/radL : 0);
+    newTrkLayer->SetXTimesRho(thickness*density);
+    newTrkLayer->SetXRes(xRes);
+    newTrkLayer->SetYRes(yRes);
+    newTrkLayer->SetTrkLayerEff(eff);
+    if      (types=="vt")   newTrkLayer->SetType(TrkLayer::kITS);
+    else if (types=="ms")   newTrkLayer->SetType(TrkLayer::kMS);
+    else if (types=="tr")   newTrkLayer->SetType(TrkLayer::kTRIG);
+    else if (types=="vtx")  {newTrkLayer->SetType(TrkLayer::kVTX); }
+    else if (types=="abs")  {newTrkLayer->SetType(TrkLayer::kABS); newTrkLayer->SetDead(kTRUE); }
+    else if (types=="dummy")  {newTrkLayer->SetType(TrkLayer::kDUMMY); newTrkLayer->SetDead(kTRUE); }
     //
-    if (!newLayer->IsDead()) newLayer->SetDead( xRes==kVeryLarge && yRes==kVeryLarge);
+    if (!newTrkLayer->IsDead()) newTrkLayer->SetDead( xRes==kVeryLarge && yRes==kVeryLarge);
     //
-    if (fLayers.GetEntries()==0) fLayers.Add(newLayer);
+    if (fTrkLayers.GetEntries()==0) fTrkLayers.Add(newTrkLayer);
     else {      
-      for (Int_t i = 0; i<fLayers.GetEntries(); i++) {
-	Layer *l = GetLayer(i);
-	if (zPos<l->GetZ()) { fLayers.AddBefore(l,newLayer); break; }
-	if (zPos>l->GetZ() && (i+1)==fLayers.GetEntries() ) { fLayers.Add(newLayer); } // even bigger then last one
+      for (Int_t i = 0; i<fTrkLayers.GetEntries(); i++) {
+	TrkLayer *l = GetTrkLayer(i);
+	if (zPos<l->GetZ()) { fTrkLayers.AddBefore(l,newTrkLayer); break; }
+	if (zPos>l->GetZ() && (i+1)==fTrkLayers.GetEntries() ) { fTrkLayers.Add(newTrkLayer); } // even bigger then last one
       }      
     }
     //
-  } else printf("Layer with the name %s does already exist\n",name);
-  newLayer->SetMaterial(mat);
+  } else printf("TrkLayer with the name %s does already exist\n",name);
+  newTrkLayer->SetMaterial(mat);
   //
-  return newLayer;
+  return newTrkLayer;
 }
 
 //______________________________________________________________________________________
-void Detector::AddBeamPipe(Float_t r, Float_t dr, Float_t radL, Float_t density, Material* mat) 
+void TrkDetector::AddBeamPipe(Float_t r, Float_t dr, Float_t radL, Float_t density, Material* mat) 
 {
   //
   // mock-up cyl. beam pipe
@@ -430,35 +430,35 @@ void Detector::AddBeamPipe(Float_t r, Float_t dr, Float_t radL, Float_t density,
 }
 
 //________________________________________________________________________________
-void Detector::ClassifyLayers()
+void TrkDetector::ClassifyTrkLayers()
 {
   // assign active Id's, etc
-  fLastActiveLayer = -1;
-  fLastActiveLayerITS = -1;
-  fNActiveLayers = 0;
-  fNActiveLayersITS = 0;
-  fNActiveLayersMS = 0;
-  fNActiveLayersTR = 0;  
+  fLastActiveTrkLayer = -1;
+  fLastActiveTrkLayerITS = -1;
+  fNActiveTrkLayers = 0;
+  fNActiveTrkLayersITS = 0;
+  fNActiveTrkLayersMS = 0;
+  fNActiveTrkLayersTR = 0;  
   //
-  fNLayers = fLayers.GetEntries();
-  for (int il=0;il<fNLayers;il++) {
-    Layer* lr = GetLayer(il);
+  fNTrkLayers = fTrkLayers.GetEntries();
+  for (int il=0;il<fNTrkLayers;il++) {
+    TrkLayer* lr = GetTrkLayer(il);
     lr->SetID(il);
     if (!lr->IsDead()) {
-      fLastActiveLayer = il; 
-      lr->SetActiveID(fNActiveLayers++);
+      fLastActiveTrkLayer = il; 
+      lr->SetActiveID(fNActiveTrkLayers++);
       if (lr->IsITS()) {
-	fLastActiveLayerITS = il;
-	fNActiveLayersITS++;
-	fLayersITS.AddLast(lr);
+	fLastActiveTrkLayerITS = il;
+	fNActiveTrkLayersITS++;
+	fTrkLayersITS.AddLast(lr);
       }
       if (lr->IsMS())   {
-	fNActiveLayersMS++;
-	fLayersMS.AddLast(lr);
+	fNActiveTrkLayersMS++;
+	fTrkLayersMS.AddLast(lr);
       }
       if (lr->IsTrig()) {
-	fNActiveLayersTR++;
-	fLayersTR.AddLast(lr);
+	fNActiveTrkLayersTR++;
+	fTrkLayersTR.AddLast(lr);
       }
     }
   }
@@ -480,35 +480,35 @@ void Detector::ClassifyLayers()
   //
   printf("DefStep: Air %f Mat: %f | N.MagField regions: %d\n",fDefStepAir,fDefStepMat,fFldNReg);
   //
-  Probe::SetNITSLayers(fNActiveLayersITS + ((fVtx && !fVtx->IsDead()) ? 1:0));
-  printf("Probe is initialized with %d slots\n",Probe::GetNITSLayers());
+  TrkProbe::SetNITSTrkLayers(fNActiveTrkLayersITS + ((fVtx && !fVtx->IsDead()) ? 1:0));
+  printf("TrkProbe is initialized with %d slots\n",TrkProbe::GetNITSTrkLayers());
 }
 
 //_________________________________________________________________
-Probe* Detector::CreateProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z)
+TrkProbe* TrkDetector::CreateTrkProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z)
 {
   // create track of given kinematics
   double xyz[3] = {x,y,z};
   double pxyz[3] = {pt*TMath::Cos(phi),pt*TMath::Sin(phi),TMath::Sqrt(pt*pt+mass*mass)*TMath::SinH(yrap)};
-  Probe* probe = new Probe(xyz,pxyz,charge);
+  TrkProbe* probe = new TrkProbe(xyz,pxyz,charge);
   probe->SetMass(mass);
   probe->SetTrID(-1);
   return probe;
 }
 
 //_________________________________________________________________
-void Detector::CreateProbe(Probe* adr, double pt, double yrap, double phi, double mass, int charge, double x,double y, double z)
+void TrkDetector::CreateTrkProbe(TrkProbe* adr, double pt, double yrap, double phi, double mass, int charge, double x,double y, double z)
 {
   // create track of given kinematics
   double xyz[3] = {x,y,z};
   double pxyz[3] = {pt*TMath::Cos(phi),pt*TMath::Sin(phi),TMath::Sqrt(pt*pt+mass*mass)*TMath::SinH(yrap)};
-  Probe* probe = new(adr) Probe(xyz,pxyz,charge);
+  TrkProbe* probe = new(adr) TrkProbe(xyz,pxyz,charge);
   probe->SetTrID(-1);
   probe->SetMass(mass);
 }
 
 //_________________________________________________________________
-Probe* Detector::PrepareProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z)
+TrkProbe* TrkDetector::PrepareTrkProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z)
 {
   // Prepare trackable Kalman track at the farthest position
   //
@@ -523,21 +523,21 @@ Probe* Detector::PrepareProbe(double pt, double yrap, double phi, double mass, i
   }
   // track parameters
   // Assume track started at (0,0,0) and shoots out on the X axis, and B field is on the Z axis
-  fProbe.Reset();
-  Probe* probe = CreateProbe(pt,yrap,phi,mass,charge,x,y,z);
-  fProbe = *probe;     // store original track
+  fTrkProbe.Reset();
+  TrkProbe* probe = CreateTrkProbe(pt,yrap,phi,mass,charge,x,y,z);
+  fTrkProbe = *probe;     // store original track
   //
   // propagate to last layer
-  fLastActiveLayerTracked = 0;
+  fLastActiveTrkLayerTracked = 0;
   int resp=0;
-  Layer* lr=0,*lrP=0;
-  for (Int_t j=0; j<=fLastActiveLayer; j++) {
+  TrkLayer* lr=0,*lrP=0;
+  for (Int_t j=0; j<=fLastActiveTrkLayer; j++) {
     lrP = lr;
-    lr = GetLayer(j);
+    lr = GetTrkLayer(j);
     lr->Reset();
     if (!lrP) continue;
     //
-    if (!(resp=PropagateToLayer(probe,lrP,lr,1))) return 0;
+    if (!(resp=PropagateToTrkLayer(probe,lrP,lr,1))) return 0;
     Cluster* cl = lr->GetCorCluster();
     double r = probe->GetR();
     //    printf("L%2d %f %f %f\n",j,r, lr->GetRMin(),lr->GetRMax());
@@ -547,16 +547,16 @@ Probe* Detector::PrepareProbe(double pt, double yrap, double phi, double mass, i
     }
     else cl->Kill();
     //
-    if (!lr->IsDead()) fLastActiveLayerTracked = j;
+    if (!lr->IsDead()) fLastActiveTrkLayerTracked = j;
   }
   probe->ResetCovariance();// reset cov.matrix
-  //  printf("Last active layer trracked: %d (out of %d)\n",fLastActiveLayerTracked,fLastActiveLayer);
+  //  printf("Last active layer trracked: %d (out of %d)\n",fLastActiveTrkLayerTracked,fLastActiveTrkLayer);
   //
   return probe;
 }
 
 //____________________________________________________________________________
-Int_t Detector::GetFieldReg(double z) 
+Int_t TrkDetector::GetFieldReg(double z) 
 {
   // return field region * 2 + 1
   int ir = 0;
@@ -570,7 +570,7 @@ Int_t Detector::GetFieldReg(double z)
 }
 
 //____________________________________________________________________________
-Bool_t Detector::PropagateToZBxByBz(Probe* trc,double z,double maxDZ,Double_t xOverX0,Double_t xTimesRho,Bool_t modeMC) 
+Bool_t TrkDetector::PropagateToZBxByBz(TrkProbe* trc,double z,double maxDZ,Double_t xOverX0,Double_t xTimesRho,Bool_t modeMC) 
 {
   // propagate to given Z, checking for the field boundaries
   //
@@ -618,7 +618,7 @@ Bool_t Detector::PropagateToZBxByBz(Probe* trc,double z,double maxDZ,Double_t xO
 }
 
 //____________________________________________________________________________
-Int_t Detector::PropagateToLayer(Probe* trc, Layer* lrFrom, Layer* lrTo, int dir, Bool_t modeMC)
+Int_t TrkDetector::PropagateToTrkLayer(TrkProbe* trc, TrkLayer* lrFrom, TrkLayer* lrTo, int dir, Bool_t modeMC)
 {
   // bring the track to lrTo, moving in direction dir (1: forward, -1: backward)
   // if relevant, account for the materials on lr
@@ -674,41 +674,41 @@ Int_t Detector::PropagateToLayer(Probe* trc, Layer* lrFrom, Layer* lrTo, int dir
 }
 
 //________________________________________________________________________________
-Bool_t Detector::SolveSingleTrackViaKalman(double pt, double yrap, double phi, 
+Bool_t TrkDetector::SolveSingleTrackViaKalman(double pt, double yrap, double phi, 
 						 double mass, int charge, double x,double y, double z)
 {
   // analytical estimate of tracking resolutions
-  //  fProbe.SetUseLogTermMS(kTRUE);
+  //  fTrkProbe.SetUseLogTermMS(kTRUE);
   //
   for (int i=3;i--;) fGenPnt[i] = 0;
-  if (fMinITSHits>fNActiveLayersITS) {
-    fMinITSHits = fLastActiveLayerITS; 
+  if (fMinITSHits>fNActiveTrkLayersITS) {
+    fMinITSHits = fLastActiveTrkLayerITS; 
     printf("Redefined request of min N ITS hits to %d\n",fMinITSHits);
   }
   //
-  Probe* probe = PrepareProbe(pt,yrap,phi,mass,charge,x,y,z);
+  TrkProbe* probe = PrepareTrkProbe(pt,yrap,phi,mass,charge,x,y,z);
   if (!probe) return kFALSE;
   //
-  Layer *lr = 0;
+  TrkLayer *lr = 0;
   //
   // Start the track fitting --------------------------------------------------------
   //
   // Back-propagate the covariance matrix along the track. 
   // Kalman loop over the layers
   //
-  Probe* currTr = 0;
-  lr = GetLayer(fLastActiveLayerTracked);
-  lr->SetAnProbe(*probe);
+  TrkProbe* currTr = 0;
+  lr = GetTrkLayer(fLastActiveTrkLayerTracked);
+  lr->SetAnTrkProbe(*probe);
   delete probe; // rethink...
   //
   int nupd = 0;
-  for (Int_t j=fLastActiveLayerTracked; j--; ) {  // Layer loop
+  for (Int_t j=fLastActiveTrkLayerTracked; j--; ) {  // TrkLayer loop
     //
-    Layer *lrP = lr;
-    lr = GetLayer(j);
+    TrkLayer *lrP = lr;
+    lr = GetTrkLayer(j);
     //
-    lr->SetAnProbe( *lrP->GetAnProbe() );
-    currTr = lr->GetAnProbe();
+    lr->SetAnTrkProbe( *lrP->GetAnTrkProbe() );
+    currTr = lr->GetAnTrkProbe();
     currTr->ResetHit(lrP->GetActiveID());
     //
     // if there was a measurement on prev layer, update the track
@@ -723,14 +723,14 @@ Bool_t Detector::SolveSingleTrackViaKalman(double pt, double yrap, double phi,
 
     }
 
-    if (!PropagateToLayer(currTr,lrP,lr,-1)) return kFALSE;      // propagate to current layer
+    if (!PropagateToTrkLayer(currTr,lrP,lr,-1)) return kFALSE;      // propagate to current layer
     //
   } // end loop over layers
   // is MS reco ok?
   // check trigger
   int nhMS=0,nhTR=0,nhITS=0;
-  for (int ilr=fNLayers;ilr--;) {
-    Layer *lrt = GetLayer(ilr);
+  for (int ilr=fNTrkLayers;ilr--;) {
+    TrkLayer *lrt = GetTrkLayer(ilr);
     if (lrt->IsTrig()) if (!lrt->GetCorCluster()->IsKilled()) nhTR++;
     if (lrt->IsMS())   if (!lrt->GetCorCluster()->IsKilled()) nhMS++;
     if (lrt->IsITS())  if (!lrt->GetCorCluster()->IsKilled()) nhITS++;
@@ -743,7 +743,7 @@ Bool_t Detector::SolveSingleTrackViaKalman(double pt, double yrap, double phi,
 }
 
 //____________________________________________________________________________
-Bool_t Detector::UpdateTrack(Probe* trc, const Layer* lr, const Cluster* cl) const
+Bool_t TrkDetector::UpdateTrack(TrkProbe* trc, const TrkLayer* lr, const Cluster* cl) const
 {
   // update track with measured cluster
   // propagate to cluster
@@ -770,7 +770,7 @@ Bool_t Detector::UpdateTrack(Probe* trc, const Layer* lr, const Cluster* cl) con
 }
 
 //________________________________________________________________________________
-Bool_t Detector::SolveSingleTrack(double pt, double yrap, double phi, 
+Bool_t TrkDetector::SolveSingleTrack(double pt, double yrap, double phi, 
 					double mass, int charge, double x,double y, double z, 
 					TObjArray* sumArr,int nMC, int offset)
 {
@@ -782,19 +782,19 @@ Bool_t Detector::SolveSingleTrack(double pt, double yrap, double phi,
   //
   /*
   int nsm = sumArr ? sumArr->GetEntriesFast() : 0;
-  Layer* vtx = GetLayer(0);
+  TrkLayer* vtx = GetTrkLayer(0);
   */
   //
   /*RS
   for (int i=0;i<nsm;i++) {
     KMCTrackSummary* tsm = (KMCTrackSummary*)sumArr->At(i);
     if (!tsm) continue;
-    tsm->SetRefProbe( GetProbeTrack() ); // attach reference track (generated)
-    tsm->SetAnProbe( vtx->GetAnProbe() ); // attach analitycal solution
+    tsm->SetRefTrkProbe( GetTrkProbeTrack() ); // attach reference track (generated)
+    tsm->SetAnTrkProbe( vtx->GetAnTrkProbe() ); // attach analitycal solution
   }
   */
   //
-  if (offset<0) offset = fNLayers;
+  if (offset<0) offset = fNTrkLayers;
 
   TStopwatch sw;
   sw.Start();
@@ -802,7 +802,7 @@ Bool_t Detector::SolveSingleTrack(double pt, double yrap, double phi,
     //    printf("ev: %d\n",it);
     SolveSingleTrackViaKalmanMC(offset);
     /*RS
-    Probe* trc = vtx->GetWinnerMCTrack();
+    TrkProbe* trc = vtx->GetWinnerMCTrack();
     for (int ism=nsm;ism--;) { // account the track in each of summaries
       KMCTrackSummary* tsm = (KMCTrackSummary*)sumArr->At(ism);
       if (!tsm) continue;
@@ -818,21 +818,21 @@ Bool_t Detector::SolveSingleTrack(double pt, double yrap, double phi,
 }
 
 //____________________________________________________________________________
-void Detector::ResetMCTracks(Int_t maxLr)
+void TrkDetector::ResetMCTracks(Int_t maxLr)
 {
-  if (maxLr<0 || maxLr>=fNLayers) maxLr = fNLayers-1;
-  for (int i=maxLr+1;i--;) GetLayer(i)->ResetMCTracks();
+  if (maxLr<0 || maxLr>=fNTrkLayers) maxLr = fNTrkLayers-1;
+  for (int i=maxLr+1;i--;) GetTrkLayer(i)->ResetMCTracks();
 }
 
 //____________________________________________________________
-Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
+Bool_t TrkDetector::SolveSingleTrackViaKalmanMC(int offset)
 {
   // MC estimate of tracking resolutions/effiencies. Requires that the SolveSingleTrackViaKalman
   // was called before, since it uses data filled by this method
   //
-  // The MC tracking will be done starting from fLastActiveLayerITS + offset (before analytical estimate will be used)
+  // The MC tracking will be done starting from fLastActiveTrkLayerITS + offset (before analytical estimate will be used)
   //
-  // At this point, the fProbe contains the track params generated at vertex.
+  // At this point, the fTrkProbe contains the track params generated at vertex.
   // Clone it and propagate to target layer to generate hit positions affected by MS
   //
   // const float kErrScale = 500.; // RS: this is the parameter defining the initial cov.matrix error wrt sensor resolution
@@ -843,33 +843,33 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
   fMuTrackBCLastITS.SetUniqueID(999); // invalidate
   fMuTrackLastITS.SetUniqueID(999); // invalidate
   //
-  Probe *currTrP=0,*currTr=0;
-  static Probe trcConstr;
-  int maxLr = fLastActiveLayerITS;
+  TrkProbe *currTrP=0,*currTr=0;
+  static TrkProbe trcConstr;
+  int maxLr = fLastActiveTrkLayerITS;
   if (offset>0) maxLr += offset;
-  if (maxLr>fLastActiveLayer) maxLr = fLastActiveLayer;
-  if (fExternalInput) maxLr = fLastActiveLayerTracked;
+  if (maxLr>fLastActiveTrkLayer) maxLr = fLastActiveTrkLayer;
+  if (fExternalInput) maxLr = fLastActiveTrkLayerTracked;
   if (maxLr<0) return kFALSE;
   if (fVtx && !fImposeVertexPosition) {
-    double tmpLab[3] = {fProbe.GetX(),fProbe.GetY(),fProbe.GetZ()};
-    Probe::Lab2Trk(tmpLab, fRefVtx); // assign in tracking frame
+    double tmpLab[3] = {fTrkProbe.GetX(),fTrkProbe.GetY(),fTrkProbe.GetZ()};
+    TrkProbe::Lab2Trk(tmpLab, fRefVtx); // assign in tracking frame
     fVtx->GetMCCluster()->Set(fRefVtx[0],fRefVtx[1],fRefVtx[2]);
   }
   //
   //printf("MaxLr: %d\n",maxLr);
   ResetMCTracks(maxLr);
-  Layer* lr = GetLayer(maxLr);
-  currTr = lr->AddMCTrack(&fProbe); // start with original track at vertex
+  TrkLayer* lr = GetTrkLayer(maxLr);
+  currTr = lr->AddMCTrack(&fTrkProbe); // start with original track at vertex
   //
   //  printf("INI SEED: "); currTr->Print("etp");
   if (!fExternalInput) {if (!TransportKalmanTrackWithMS(currTr, maxLr, kFALSE)) return kFALSE;} // transport it to outermost layer where full MC is done
-  else *currTr->GetTrack() = *GetLayer(maxLr)->GetAnProbe()->GetTrack();
+  else *currTr->GetTrack() = *GetTrkLayer(maxLr)->GetAnTrkProbe()->GetTrack();
   //printf("LastTrackedMS: "); currTr->GetTrack()->Print();
   //
-  if (maxLr<=fLastActiveLayerTracked && maxLr>fLastActiveLayerITS) { // prolongation from MS
+  if (maxLr<=fLastActiveTrkLayerTracked && maxLr>fLastActiveTrkLayerITS) { // prolongation from MS
     // start from correct track propagated from above till maxLr
     double *covMS = (double*)currTr->GetTrack()->GetCovariance();
-    const double *covIdeal = GetLayer(maxLr)->GetAnProbe()->GetCovariance();
+    const double *covIdeal = GetTrkLayer(maxLr)->GetAnTrkProbe()->GetCovariance();
     for (int i=15;i--;) covMS[i] = covIdeal[i];
   }
   else { // ITS SA: randomize the starting point
@@ -880,11 +880,11 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
   int fst = 0;
   const int fstLim = -1;
 
-  for (Int_t j=maxLr; j--; ) {  // Layer loop
+  for (Int_t j=maxLr; j--; ) {  // TrkLayer loop
     //
     int ncnd=0,cndCorr=-1;
-    Layer *lrP = lr;
-    lr = GetLayer(j);
+    TrkLayer *lrP = lr;
+    lr = GetTrkLayer(j);
     int ntPrev = lrP->GetNMCTracks();
     //
     //    printf("Lr:%d %s IsDead:%d\n",j, lrP->GetName(),lrP->IsDead());
@@ -897,7 +897,7 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
 	  fst++;
 	  // currTr->Print("etp");
 	}
-	if (!PropagateToLayer(currTr,lrP,lr,-1))  {currTr->Kill(); lr->GetMCTracks()->RemoveLast(); continue;} // propagate to current layer
+	if (!PropagateToTrkLayer(currTr,lrP,lr,-1))  {currTr->Kill(); lr->GetMCTracks()->RemoveLast(); continue;} // propagate to current layer
       }
       continue;
     } // treatment of dead layer <<<
@@ -919,7 +919,7 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
 	  if (!UpdateTrack(currTr, lrP, clmc)) {currTr->Kill(); lr->GetMCTracks()->RemoveLast(); continue;} // update with correct MC cl.
 	  //	  printf("AfterMS Update: "); currTr->Print("etp");
 	}
-	if (!PropagateToLayer(currTr,lrP,lr,-1))            {currTr->Kill(); lr->GetMCTracks()->RemoveLast(); continue;} // propagate to current layer	
+	if (!PropagateToTrkLayer(currTr,lrP,lr,-1))            {currTr->Kill(); lr->GetMCTracks()->RemoveLast(); continue;} // propagate to current layer	
       }      
       //      currTr->Print("etp");
       continue;
@@ -948,12 +948,12 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
       }
       //
       // Are we entering to the last ITS layer? Apply Branson plane correction if requested
-      if (lrP->GetID() == fLastActiveLayerITS && fVtx && !fVtx->IsDead() && fApplyBransonPCorrection>=0) {
+      if (lrP->GetID() == fLastActiveTrkLayerITS && fVtx && !fVtx->IsDead() && fApplyBransonPCorrection>=0) {
 	//	printf("%e -> %e (%d %d) | %e\n",lrP->GetZ(),lr->GetZ(), lrP->GetID(),j, currTr->GetZ());
 
 	trcConstr = *currTrP;
 	fMuTrackLastITS = trcConstr;
-	if (!PropagateToLayer(&trcConstr,lrP,fVtx,-1))  {currTrP->Kill();continue;} // propagate to vertex
+	if (!PropagateToTrkLayer(&trcConstr,lrP,fVtx,-1))  {currTrP->Kill();continue;} // propagate to vertex
 	//////	trcConstr.ResetCovariance();
 	// update with vertex point + eventual additional error
 	float origErrX = fVtx->GetYRes(), origErrY = fVtx->GetXRes(); 
@@ -970,13 +970,13 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
 
 	fMuTrackVertex = trcConstr;
 	if (!trcConstr.Update(measCV,errCV)) {currTrP->Kill();continue;}
-	//	printf("Truth@VTX: "); fProbe.Print("etp");
+	//	printf("Truth@VTX: "); fTrkProbe.Print("etp");
 	//	printf("Constraint@VTX: "); trcConstr.Print("etp");
 	fMuTrackBCVertex = trcConstr;
 	fMuTrackBCVertex.SetUniqueID(0);
 	
 	
-	if (!PropagateToLayer(&trcConstr,fVtx,lrP,1)) {currTrP->Kill();continue;}
+	if (!PropagateToTrkLayer(&trcConstr,fVtx,lrP,1)) {currTrP->Kill();continue;}
 	// constrain Muon Track
 	//	printf("Constraint: "); trcConstr.Print("etp");
 
@@ -991,7 +991,7 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
 	fMuTrackBCLastITS.SetUniqueID(0);
 	(*currTrP->GetTrack()) = *trcConstr.GetTrack(); // override with constraint
 	//	printf("After  constraint: "); currTrP->Print("etp");
-	//	printf("MuTruth "); lrP->GetAnProbe()->Print("etp");
+	//	printf("MuTruth "); lrP->GetAnTrkProbe()->Print("etp");
       }
       
       currTr = lr->AddMCTrack( currTrP );
@@ -1001,9 +1001,9 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
 	// currTr->Print("etp");
       }
       //
-      LUXEDebug(2,Form("LastChecked before:%d",currTr->GetInnerLayerChecked()));
+      LUXEDebug(2,Form("LastChecked before:%d",currTr->GetInnerTrkLayerChecked()));
       CheckTrackProlongations(currTr, lrP,lr);
-      LUXEDebug(2,Form("LastChecked after:%d",currTr->GetInnerLayerChecked()));
+      LUXEDebug(2,Form("LastChecked after:%d",currTr->GetInnerTrkLayerChecked()));
       ncnd++;
       if (currTr->GetNFakeITSHits()==0 && cndCorr<ncnd) cndCorr=ncnd;
       if (NeedToKill(currTr)) {currTr->Kill(); continue;}
@@ -1029,7 +1029,7 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
     for (int itr=ntTot;itr--;) {
       currTr = lr->GetMCTrack(itr);
       if (currTr->IsKilled()) continue;
-      if (!PropagateToLayer(currTr,lrP,lr,-1))  {currTr->Kill();continue;} // propagate to current layer
+      if (!PropagateToTrkLayer(currTr,lrP,lr,-1))  {currTr->Kill();continue;} // propagate to current layer
     }
     LUXEDebug(1,Form("Got %d tracks on layer %s",ntTot,lr->GetName()));
     //    lr->GetMCTracks()->Print();
@@ -1080,10 +1080,10 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC(int offset)
 
 //________________________________________________________________________________
 // TODO: Noam code start
-Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double phi, 
+Bool_t TrkDetector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double phi, 
 						 double mass, int charge, double x,double y, double z, int offset)
 {
-  Probe* probe = PrepareProbe(pt,yrap,phi,mass,charge,x,y,z); /// delete later
+  TrkProbe* probe = PrepareTrkProbe(pt,yrap,phi,mass,charge,x,y,z); /// delete later
   if(!probe) return kFALSE;
 
   fMuTrackVertex.SetUniqueID(999); // invalidate
@@ -1091,22 +1091,22 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double
   fMuTrackBCLastITS.SetUniqueID(999); // invalidate
   fMuTrackLastITS.SetUniqueID(999); // invalidate
 
-  Probe *currTrP=0,*currTr=0;
-  static Probe trcConstr;
-  int maxLr = fLastActiveLayerITS;
+  TrkProbe *currTrP=0,*currTr=0;
+  static TrkProbe trcConstr;
+  int maxLr = fLastActiveTrkLayerITS;
   if (offset>0) maxLr += offset;
-  if (maxLr>fLastActiveLayer) maxLr = fLastActiveLayer;
-  if (fExternalInput) maxLr = fLastActiveLayerTracked;
+  if (maxLr>fLastActiveTrkLayer) maxLr = fLastActiveTrkLayer;
+  if (fExternalInput) maxLr = fLastActiveTrkLayerTracked;
   if (maxLr<0) return kFALSE;
 
   if(fVtx && !fImposeVertexPosition)
   {
-    double tmpLab[3] = {fProbe.GetX(),fProbe.GetY(),fProbe.GetZ()};
-    Probe::Lab2Trk(tmpLab, fRefVtx); // assign in tracking frame
+    double tmpLab[3] = {fTrkProbe.GetX(),fTrkProbe.GetY(),fTrkProbe.GetZ()};
+    TrkProbe::Lab2Trk(tmpLab, fRefVtx); // assign in tracking frame
     fVtx->GetMCCluster()->Set(fRefVtx[0],fRefVtx[1],fRefVtx[2]);
   }
 
-  Layer* lr = GetLayer(maxLr);
+  TrkLayer* lr = GetTrkLayer(maxLr);
   currTr = lr->AddMCTrack(probe); // start with seed track at vertex
   // probe-sPrint("etp");
 
@@ -1118,12 +1118,12 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double
   int fst = 0;
   const int fstLim = -1;
 
-  for(Int_t j=maxLr; j--; )  // Layer loop
+  for(Int_t j=maxLr; j--; )  // TrkLayer loop
   {
     int ncnd=0;
 	 int cndCorr=-1;
-    Layer *lrP = lr;
-    lr = GetLayer(j);
+    TrkLayer *lrP = lr;
+    lr = GetTrkLayer(j);
 	 // printf("LR   |" );  lr->Print("cl");
 	 // printf("LRP |" );   lrP->Print("cl");
 	 
@@ -1144,7 +1144,7 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double
           fst++;
           // currTr->Print("etp");
         }
-	     if(!PropagateToLayer(currTr,lrP,lr,-1)) // propagate to current layer:
+	     if(!PropagateToTrkLayer(currTr,lrP,lr,-1)) // propagate to current layer:
         {
            currTr->Kill();
 			  lr->GetMCTracks()->RemoveLast();
@@ -1168,11 +1168,11 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double
          fst++;
          // currTr->Print("etp");
       }
-      // LUXEInfo(Form("LastChecked before:%d",currTr->GetInnerLayerChecked()));
+      // LUXEInfo(Form("LastChecked before:%d",currTr->GetInnerTrkLayerChecked()));
 		// printf("tr%d | ", itrP); currTr->Print("etp");
       CheckTrackProlongations(currTr, lrP,lr);
 
-      // LUXEInfo(Form("LastChecked after:%d",currTr->GetInnerLayerChecked()));
+      // LUXEInfo(Form("LastChecked after:%d",currTr->GetInnerTrkLayerChecked()));
       ncnd++;
       if(currTr->GetNFakeITSHits()==0 && cndCorr<ncnd) cndCorr=ncnd;
       if(NeedToKill(currTr)) {currTr->Kill(); continue;}
@@ -1193,7 +1193,7 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double
       {
         continue;
       }
-      if(!PropagateToLayer(currTr,lrP,lr,-1)) // propagate to current layer
+      if(!PropagateToTrkLayer(currTr,lrP,lr,-1)) // propagate to current layer
       {
         currTr->Kill();
         continue;
@@ -1257,40 +1257,40 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double
 
 //________________________________________________________________________________
 // TODO: Noam code start
-Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentzVector>& pseeds, double mass, int charge, int offset, bool doPrint)
+Bool_t TrkDetector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentzVector>& pseeds, double mass, int charge, int offset, bool doPrint)
 {
   fMuTrackVertex.SetUniqueID(999); // invalidate
   fMuTrackBCVertex.SetUniqueID(999); // invalidate
   fMuTrackBCLastITS.SetUniqueID(999); // invalidate
   fMuTrackLastITS.SetUniqueID(999); // invalidate
 	
-  Probe *currTrP=0,*currTr=0;
-  static Probe trcConstr;
-  int maxLr = fLastActiveLayerITS;
+  TrkProbe *currTrP=0,*currTr=0;
+  static TrkProbe trcConstr;
+  int maxLr = fLastActiveTrkLayerITS;
   if (offset>0) maxLr += offset;
-  if (maxLr>fLastActiveLayer) maxLr = fLastActiveLayer;
-  if (fExternalInput) maxLr = fLastActiveLayerTracked;
+  if (maxLr>fLastActiveTrkLayer) maxLr = fLastActiveTrkLayer;
+  if (fExternalInput) maxLr = fLastActiveTrkLayerTracked;
   if(maxLr<0) return kFALSE;
   
   if(fVtx && !fImposeVertexPosition)
   {
-    double tmpLab[3] = {fProbe.GetX(),fProbe.GetY(),fProbe.GetZ()};
-    Probe::Lab2Trk(tmpLab, fRefVtx); // assign in tracking frame
+    double tmpLab[3] = {fTrkProbe.GetX(),fTrkProbe.GetY(),fTrkProbe.GetZ()};
+    TrkProbe::Lab2Trk(tmpLab, fRefVtx); // assign in tracking frame
     fVtx->GetMCCluster()->Set(fRefVtx[0],fRefVtx[1],fRefVtx[2]);
   }
 
-  std::vector<Probe*> probes;
+  std::vector<TrkProbe*> probes;
   for(unsigned int s=0 ; s<pseeds.size() ; ++s) 
   { 
      double x=0,y=0,z=0; 
-     Probe* probe = PrepareProbe(pseeds[s].Pt(),pseeds[s].Rapidity(),pseeds[s].Phi(),mass,charge,x,y,z);
+     TrkProbe* probe = PrepareTrkProbe(pseeds[s].Pt(),pseeds[s].Rapidity(),pseeds[s].Phi(),mass,charge,x,y,z);
      if (!probe) continue;
      probes.push_back( probe );
   }
   
-  /// add the tracks after caching all the probes since PrepareProbe resets all layers
-  for(int l=0 ; l<GetLayers()->GetEntries() ; l++) GetLayer(l)->Reset();
-  Layer* lr = GetLayer(maxLr);
+  /// add the tracks after caching all the probes since PrepareTrkProbe resets all layers
+  for(int l=0 ; l<GetTrkLayers()->GetEntries() ; l++) GetTrkLayer(l)->Reset();
+  TrkLayer* lr = GetTrkLayer(maxLr);
   for(unsigned int p=0 ; p<probes.size() ; ++p)
   {
     currTr = lr->AddMCTrack( probes[p] );
@@ -1304,12 +1304,12 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentz
   int fst = 0;
   const int fstLim = -1;
   
-  for(Int_t j=maxLr; j--; )  // Layer loop
+  for(Int_t j=maxLr; j--; )  // TrkLayer loop
   {
     int ncnd=0;
   	int cndCorr=-1;
-    Layer *lrP = lr;
-    lr = GetLayer(j);
+    TrkLayer *lrP = lr;
+    lr = GetTrkLayer(j);
   	if(doPrint) {printf("LR  |" ); lr->Print("cl clid");}
   	if(doPrint) {printf("LRP |" ); lrP->Print("cl clid");}
   	 
@@ -1338,9 +1338,9 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentz
           fst++;
           if(doPrint) {LUXEInfo(Form("In fst<fstLim for lrP->IsDead()==true")); currTr->Print("etp clid");}
         }
-  	     if(!PropagateToLayer(currTr,lrP,lr,-1)) // propagate to current layer:
+  	     if(!PropagateToTrkLayer(currTr,lrP,lr,-1)) // propagate to current layer:
         {
-			  if(doPrint) LUXEInfo(Form("In !PropagateToLayer(currTr,lrP,lr,-1) for lrP->IsDead()==true"));
+			  if(doPrint) LUXEInfo(Form("In !PropagateToTrkLayer(currTr,lrP,lr,-1) for lrP->IsDead()==true"));
            currTr->Kill();
   			  lr->GetMCTracks()->RemoveLast();
   			  continue;
@@ -1368,10 +1368,10 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentz
          fst++;
          if(doPrint) {currTr->Print("etp clid");}
       }
-      if(doPrint) {LUXEInfo(Form("LastChecked before:%d",currTr->GetInnerLayerChecked()));}
+      if(doPrint) {LUXEInfo(Form("LastChecked before:%d",currTr->GetInnerTrkLayerChecked()));}
   		if(doPrint) {printf("tr%d | ", itrP); currTr->Print("etp clid");}
       CheckTrackProlongations(currTr, lrP,lr,doPrint);
-      if(doPrint) {LUXEInfo(Form("LastChecked after:%d",currTr->GetInnerLayerChecked()));}
+      if(doPrint) {LUXEInfo(Form("LastChecked after:%d",currTr->GetInnerTrkLayerChecked()));}
       ncnd++;
       if(currTr->GetNFakeITSHits()==0 && cndCorr<ncnd) cndCorr=ncnd;
       if(NeedToKill(currTr))
@@ -1401,9 +1401,9 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentz
 		  if(doPrint) {LUXEInfo(Form("Track is already killed layer %s (!currTr->IsKilled())",lr->GetName()));}
         continue;
       }
-      if(!PropagateToLayer(currTr,lrP,lr,-1)) // propagate to current layer
+      if(!PropagateToTrkLayer(currTr,lrP,lr,-1)) // propagate to current layer
       {
-		  if(doPrint) {LUXEInfo(Form("Killing track on layer %s (!PropagateToLayer)",lr->GetName()));}
+		  if(doPrint) {LUXEInfo(Form("Killing track on layer %s (!PropagateToTrkLayer)",lr->GetName()));}
         currTr->Kill();
         continue;
       }
@@ -1486,16 +1486,16 @@ Bool_t Detector::SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentz
 
 
 //________________________________________________________________________________
-Bool_t Detector::TransportKalmanTrackWithMS(Probe *probTr, int maxLr, Bool_t bg)
+Bool_t TrkDetector::TransportKalmanTrackWithMS(TrkProbe *probTr, int maxLr, Bool_t bg)
 {
   // Transport track till layer maxLr, applying random MS
   //
   int resP = 0;
   for (Int_t j=0; j<maxLr; j++) {
-    Layer* lr0 = GetLayer(j);
-    Layer* lr  = GetLayer(j+1);
+    TrkLayer* lr0 = GetTrkLayer(j);
+    TrkLayer* lr  = GetTrkLayer(j+1);
     //
-    if (!(resP=PropagateToLayer(probTr,lr0,lr, 1, kTRUE))) return kFALSE;
+    if (!(resP=PropagateToTrkLayer(probTr,lr0,lr, 1, kTRUE))) return kFALSE;
     if (lr->IsDead()) continue;
     if (resP<0) {lr->GetMCCluster()->Kill(); continue;}
     double r = probTr->GetR();
@@ -1511,7 +1511,7 @@ Bool_t Detector::TransportKalmanTrackWithMS(Probe *probTr, int maxLr, Bool_t bg)
     probTr->GetXYZ(clxyz);
     clxyz[0] += rx*lr->GetXRes();
     clxyz[1] += ry*lr->GetYRes();
-    Probe::Trk2Lab(clxyz, clxyzL);
+    TrkProbe::Trk2Lab(clxyz, clxyzL);
     lr->GetMCCluster()->Set(clxyzL[0],clxyzL[1],clxyzL[2]);
     */
     // cluster is stored in local frame	 
@@ -1527,25 +1527,25 @@ Bool_t Detector::TransportKalmanTrackWithMS(Probe *probTr, int maxLr, Bool_t bg)
 }
 
 
-void Detector::CheckClusters(int i1, int i2, int i3, int i4)
+void TrkDetector::CheckClusters(int i1, int i2, int i3, int i4)
 {
-	Layer* lr = 0;
+	TrkLayer* lr = 0;
 	Cluster *cl = 0;
-	if(i1>=0) {lr = GetLayer(1); cl = lr->GetBgCluster(i1); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i1,lr->GetName()));}
-	if(i2>=0) {lr = GetLayer(3); cl = lr->GetBgCluster(i2); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i2,lr->GetName()));}
-	if(i3>=0) {lr = GetLayer(5); cl = lr->GetBgCluster(i3); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i3,lr->GetName()));}
-	if(i4>=0) {lr = GetLayer(7); cl = lr->GetBgCluster(i4); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i4,lr->GetName()));}
+	if(i1>=0) {lr = GetTrkLayer(1); cl = lr->GetBgCluster(i1); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i1,lr->GetName()));}
+	if(i2>=0) {lr = GetTrkLayer(3); cl = lr->GetBgCluster(i2); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i2,lr->GetName()));}
+	if(i3>=0) {lr = GetTrkLayer(5); cl = lr->GetBgCluster(i3); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i3,lr->GetName()));}
+	if(i4>=0) {lr = GetTrkLayer(7); cl = lr->GetBgCluster(i4); if(cl->IsKilled()) LUXEInfo(Form("Cluster with id=%d and index=%d for layer %s is killed",cl->GetTrID(),i4,lr->GetName()));}
 }
 
 //____________________________________________________________________________
-void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool doPrint)
+void TrkDetector::CheckTrackProlongations(TrkProbe *probe, TrkLayer* lrP, TrkLayer* lr, bool doPrint)
 {
   // explore prolongation of probe from lrP to lr with all possible clusters of lrP
   // the probe is already brought to clusters frame
   // for the last ITS plane apply Branson correction
-  //if (lrP->GetUniqueID()==fLastActiveLayerITS) probe->Print("etp");
+  //if (lrP->GetUniqueID()==fLastActiveTrkLayerITS) probe->Print("etp");
   /*
-  if (lrP->GetUniqueID()==fLastActiveLayerITS && fVtx) {
+  if (lrP->GetUniqueID()==fLastActiveTrkLayerITS && fVtx) {
     printf("Before Branson: "); probe->Print("etp");
     double zP = probe->GetZ();
     if (!PropagateToZBxByBz(probe,fVtx->GetZ(),fDefStepAir)) return;
@@ -1556,7 +1556,7 @@ void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool
     printf("After Branson: "); probe->Print("etp");
   }
   */
-  static Probe propVtx;
+  static TrkProbe propVtx;
   //
   int nCl = lrP->GetNBgClusters();
   double rad = probe->GetR();
@@ -1573,10 +1573,10 @@ void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool
   double zMax = zMin + tolerZ + tolerZ;
   if(doPrint) probe->GetTrack()->Print("clid");
   probe->SetInnerLrChecked(lrP->GetActiveID());
-  if(doPrint) {LUXEInfo(Form("From Lr(%d) %s to Lr(%d) %s | LastChecked %d", lrP->GetActiveID(),lrP->GetName(),lr->GetActiveID(),lr->GetName(),probe->GetInnerLayerChecked()));}
+  if(doPrint) {LUXEInfo(Form("From Lr(%d) %s to Lr(%d) %s | LastChecked %d", lrP->GetActiveID(),lrP->GetName(),lr->GetActiveID(),lr->GetName(),probe->GetInnerTrkLayerChecked()));}
   for (int icl=-1;icl<nCl;icl++) {
     //
-    if(gRandom->Rndm() > lrP->GetLayerEff()) continue; // generate layer eff
+    if(gRandom->Rndm() > lrP->GetTrkLayerEff()) continue; // generate layer eff
     //
     Cluster *cl = icl<0 ? lrP->GetMCCluster() : lrP->GetBgCluster(icl);  // -1 is for true MC cluster
     if (cl->IsKilled()) {
@@ -1602,9 +1602,9 @@ void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool
     if (chi2>fMaxChi2Cl) continue;
 	 if(doPrint) {printf("Lr%d | cl%d, chi:%.3f X:%+.4f Y:%+.4f | x:%+.4f y:%+.4f |Sg: %.4f %.4f\n", lrP->GetActiveID(),icl,chi2, (zMin+zMax)/2,(yMin+yMax)/2, z,y, tolerZ/TMath::Sqrt(fMaxChi2Cl),tolerY/TMath::Sqrt(fMaxChi2Cl));}
     // update track copy
-    Probe* newTr = lr->AddMCTrack( probe );
+    TrkProbe* newTr = lr->AddMCTrack( probe );
     if (!newTr->Update(meas,measErr2)) {
-		if(doPrint) {LUXEInfo(Form("Layer %s: Failed to update the track by measurement {%.3f,%3f} err {%.3e %.3e %.3e}", lrP->GetName(),meas[0],meas[1], measErr2[0],measErr2[1],measErr2[2]));}
+		if(doPrint) {LUXEInfo(Form("TrkLayer %s: Failed to update the track by measurement {%.3f,%3f} err {%.3e %.3e %.3e}", lrP->GetName(),meas[0],meas[1], measErr2[0],measErr2[1],measErr2[2]));}
 		if(doPrint) {newTr->Print("l clid");}
       newTr->Kill();
       lr->GetMCTracks()->RemoveLast();
@@ -1612,7 +1612,7 @@ void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool
     }
 	 else
 	 {
-	 	if(doPrint) { LUXEInfo(Form("Layer %s: Succeed to update the track by measurement {%.3f,%3f} err {%.3e %.3e %.3e}", lrP->GetName(),meas[0],meas[1], measErr2[0],measErr2[1],measErr2[2]));}
+	 	if(doPrint) { LUXEInfo(Form("TrkLayer %s: Succeed to update the track by measurement {%.3f,%3f} err {%.3e %.3e %.3e}", lrP->GetName(),meas[0],meas[1], measErr2[0],measErr2[1],measErr2[2]));}
 		if(doPrint) {newTr->Print("l clid");}
 	 }
     if (fMinP2Propagate>0) {
@@ -1656,7 +1656,7 @@ void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool
 
     ////////////////////////////////////////
 
-    //    if (!PropagateToLayer(newTr,lrP,lr,-1)) {newTr->Kill(); continue;} // propagate to next layer
+    //    if (!PropagateToTrkLayer(newTr,lrP,lr,-1)) {newTr->Kill(); continue;} // propagate to next layer
     // if (LUXELog::GetGlobalDebugLevel()>1) {
     if(doPrint) {
       LUXEInfo(Form("Cloned updated track is:"));
@@ -1667,21 +1667,21 @@ void Detector::CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool
 }
 
 //_________________________________________________________
-//Double_t Detector::HitDensity(double xLab,double ylab,double zlab ) const
-Double_t Detector::HitDensity(double ,double ,double  ) const
+//Double_t TrkDetector::HitDensity(double xLab,double ylab,double zlab ) const
+Double_t TrkDetector::HitDensity(double ,double ,double  ) const
 {
   // RS to do
   return 1;
 }
 
 //_________________________________________________________
-Bool_t Detector::NeedToKill(Probe* probe) const
+Bool_t TrkDetector::NeedToKill(TrkProbe* probe) const
 {
   // check if the seed should be killed
   const Bool_t kModeKillMiss = kFALSE;
   Bool_t kill = kFALSE;
   while (1) {
-    int il = probe->GetInnerLayerChecked();
+    int il = probe->GetInnerTrkLayerChecked();
     int nITS = probe->GetNITSHits();
     int nITSMax = nITS + il; // maximum it can have
     if (nITSMax<fMinITSHits) {
@@ -1707,10 +1707,10 @@ Bool_t Detector::NeedToKill(Probe* probe) const
     if (nITS>2) {  // check if smallest possible norm chi2/ndf is acceptable
       double chi2min = probe->GetChi2ITS();
       if (kModeKillMiss) {
-	      int nMiss = fNActiveLayersITS - probe->GetInnerLayerChecked() - nITS; // layers already missed
+	      int nMiss = fNActiveTrkLayersITS - probe->GetInnerTrkLayerChecked() - nITS; // layers already missed
 	      chi2min = nMiss*probe->GetMissingHitPenalty();
       }
-      chi2min /= ((nITSMax<<1)-Probe::kNDOF);
+      chi2min /= ((nITSMax<<1)-TrkProbe::kNDOF);
       if (chi2min>fMaxNormChi2NDF) {
 	      kill = kTRUE; 
 			// LUXEInfo(Form("Kill due to chi2"));
@@ -1742,7 +1742,7 @@ Bool_t Detector::NeedToKill(Probe* probe) const
     break;
   }
   if (kill && LUXELog::GetGlobalDebugLevel()>1 && probe->GetNFakeITSHits()==0) {
-    printf("Killing good seed, last upd layer was %d\n",probe->GetInnerLayerChecked());
+    printf("Killing good seed, last upd layer was %d\n",probe->GetInnerTrkLayerChecked());
     probe->Print("l");
   }
   return kill;
@@ -1750,7 +1750,7 @@ Bool_t Detector::NeedToKill(Probe* probe) const
 }
 
 //_________________________________________________________
-void Detector::PerformDecay(Probe* trc)
+void TrkDetector::PerformDecay(TrkProbe* trc)
 {
   // Decay track
   if (fDecMode==kNoDecay) return;
@@ -1796,7 +1796,7 @@ void Detector::PerformDecay(Probe* trc)
   pxyz[1] = pDecMu.Py();
   pxyz[2] = pDecMu.Pz();
   //
-  static Probe tmpPr;
+  static TrkProbe tmpPr;
   tmpPr.Init(xyz,pxyz,trc->GetTrack()->Charge());
   double* parTr  = (double*)trc->GetTrack()->GetParameter();
   double* parNew = (double*)tmpPr.GetTrack()->GetParameter();  
@@ -1833,13 +1833,13 @@ void Detector::PerformDecay(Probe* trc)
 }
 
 //_________________________________________________________
-void Detector::InitDecayZHisto(double absorberLambda)
+void TrkDetector::InitDecayZHisto(double absorberLambda)
 {
   // prepare a profile of Zdecay: uniform till start of the absorber, then exponentially dumped
   if (absorberLambda<1) absorberLambda = 1;
-  Layer* labs = 0;
-  for (int i=0;i<fNLayers;i++) {
-    if ( (labs=GetLayer(i))->IsAbs()) break;
+  TrkLayer* labs = 0;
+  for (int i=0;i<fNTrkLayers;i++) {
+    if ( (labs=GetTrkLayer(i))->IsAbs()) break;
     labs = 0;
   }
   if (!labs) {
@@ -1847,7 +1847,7 @@ void Detector::InitDecayZHisto(double absorberLambda)
     exit(1);
   }
   double zdmp = labs->GetZ()-labs->GetThickness()/2;
-  double zmax = GetLayer(fLastActiveLayer)->GetZ();
+  double zmax = GetTrkLayer(fLastActiveTrkLayer)->GetZ();
   LUXEDebug(2,Form("Decay will be done uniformly till Z=%.1f, then dumped with Lambda=%.1f cm",zdmp,absorberLambda));
   //
   int nbn = int(zmax-zdmp+1);
@@ -1865,23 +1865,23 @@ void Detector::InitDecayZHisto(double absorberLambda)
 }
 
 //_________________________________________________________
-void Detector::GenBgEvent(double x, double y, double z, int offset)
+void TrkDetector::GenBgEvent(double x, double y, double z, int offset)
 {
   if (fNChPi<0 && fNChK<0 && fNChP<0) return;
   // generate bg. events from simple thermalPt-gaussian Y parameterization
   if (!fdNdYPi || !fdNdYK || !fdNdYP || !fdNdPtPi || !fdNdPtK || !fdNdPtP) LUXEFatal("Background generation was not initialized");
   //
-  int maxLr = fLastActiveLayerITS + offset;
-  if (maxLr > fLastActiveLayer) maxLr = fLastActiveLayer;
+  int maxLr = fLastActiveTrkLayerITS + offset;
+  if (maxLr > fLastActiveTrkLayer) maxLr = fLastActiveTrkLayer;
   //
-  for (int ilr=fLastActiveLayer;ilr--;) {
-    Layer* lr = GetLayer(ilr);
+  for (int ilr=fLastActiveTrkLayer;ilr--;) {
+    TrkLayer* lr = GetTrkLayer(ilr);
     if (lr->IsDead()) continue;
     lr->ResetBgClusters();
   }
   int decMode = fDecMode;
   fDecMode = kNoDecay;
-  Probe bgtr;
+  TrkProbe bgtr;
   //
   //  double ntr = gRandom->Poisson( fNCh );
 //   for (int itr=0;itr<ntr;itr++) {
@@ -1889,7 +1889,7 @@ void Detector::GenBgEvent(double x, double y, double z, int offset)
 //     double pt = fdNdPt->GetRandom();
 //     double phi = gRandom->Rndm()*TMath::Pi()*2;
 //     int charge = gRandom->Rndm()>0.5 ? 1:-1;
-//     CreateProbe(&bgtr, pt, yrap, phi, kMassPi, charge, x,y,z);
+//     CreateTrkProbe(&bgtr, pt, yrap, phi, kMassPi, charge, x,y,z);
 //     bgtr.SetTrID(itr);
 //     TransportKalmanTrackWithMS(&bgtr, maxLr,kTRUE);
 //   }
@@ -1902,7 +1902,7 @@ void Detector::GenBgEvent(double x, double y, double z, int offset)
     double pt = fdNdPtPi->GetRandom();
     double phi = gRandom->Rndm()*TMath::Pi()*2;
     int charge = gRandom->Rndm()>0.52 ? 1:-1;
-    CreateProbe(&bgtr, pt, yrap, phi, kMassPi, charge, x,y,z);
+    CreateTrkProbe(&bgtr, pt, yrap, phi, kMassPi, charge, x,y,z);
     bgtr.SetTrID(ntrTot++);
     TransportKalmanTrackWithMS(&bgtr, maxLr,kTRUE);
   }
@@ -1914,7 +1914,7 @@ void Detector::GenBgEvent(double x, double y, double z, int offset)
     double pt = fdNdPtK->GetRandom();
     double phi = gRandom->Rndm()*TMath::Pi()*2;
     int charge = gRandom->Rndm()>0.3 ? 1:-1;
-    CreateProbe(&bgtr, pt, yrap, phi, kMassK, charge, x,y,z);
+    CreateTrkProbe(&bgtr, pt, yrap, phi, kMassK, charge, x,y,z);
     bgtr.SetTrID(ntrTot++);
     TransportKalmanTrackWithMS(&bgtr, maxLr,kTRUE);
   }
@@ -1926,13 +1926,13 @@ void Detector::GenBgEvent(double x, double y, double z, int offset)
     double pt = fdNdPtP->GetRandom();
     double phi = gRandom->Rndm()*TMath::Pi()*2;
     int charge = 1;
-    CreateProbe(&bgtr, pt, yrap, phi, kMassP, charge, x,y,z);
+    CreateTrkProbe(&bgtr, pt, yrap, phi, kMassP, charge, x,y,z);
     bgtr.SetTrID(ntrTot++);
     TransportKalmanTrackWithMS(&bgtr, maxLr,kTRUE);
   }
   //
   for (int ilr=maxLr;ilr--;) {
-    Layer* lr = GetLayer(ilr);
+    TrkLayer* lr = GetTrkLayer(ilr);
     if (lr->IsDead()) continue;
     lr->SortBGClusters();
   }
@@ -1941,7 +1941,7 @@ void Detector::GenBgEvent(double x, double y, double z, int offset)
 }
 
 //_________________________________________________________
-void Detector::InitBgGeneration(int dndeta, 
+void TrkDetector::InitBgGeneration(int dndeta, 
 				      double y0, double sigy, double ymin,double ymax,
 				      double T, double ptmin, double ptmax)
 {
@@ -1955,7 +1955,7 @@ void Detector::InitBgGeneration(int dndeta,
 }
 
 //_________________________________________________________
-void Detector::InitBgGenerationPart(double NPi,double NKplus,double NKminus ,double NP,double Piratio,
+void TrkDetector::InitBgGenerationPart(double NPi,double NKplus,double NKminus ,double NP,double Piratio,
 					  double y0, double y0Pi,double y0Kplus,double y0Kminus,double y0P,
 					  double sigyPi, double sigyKplus,double sigyKminus, double sigyP,
 					  double ymin,double ymax,
@@ -1983,7 +1983,7 @@ void Detector::InitBgGenerationPart(double NPi,double NKplus,double NKminus ,dou
 }
 
 //_____________________________________________________________________
-void Detector::RequirePattern(UInt_t patt)
+void TrkDetector::RequirePattern(UInt_t patt)
 {
   // optional pattern to satyisfy
   if (!patt) return;
@@ -1993,22 +1993,22 @@ void Detector::RequirePattern(UInt_t patt)
 }
 
 //_____________________________________________________________________
-void Detector::BookControlHistos()
+void TrkDetector::BookControlHistos()
 {
   fHChi2Branson = new TH1F("chi2Branson","chi2 Mu @ vtx",      100,0,100);
-  fHChi2LrCorr = new TH2F("chi2Cl","chi2 corr cluster",        fNActiveLayersITS+1,0,fNActiveLayersITS+1,100,0,fMaxChi2Cl);
-  fHChi2NDFCorr = new TH2F("chi2NDFCorr","chi2/ndf corr tr.",  fNActiveLayersITS+1,0,fNActiveLayersITS+1,100,0,fMaxNormChi2NDF);
-  fHChi2NDFFake = new TH2F("chi2NDFFake","chi2/ndf fake tr.",  fNActiveLayersITS+1,0,fNActiveLayersITS+1,100,0,fMaxNormChi2NDF);
-  fHChi2VtxCorr = new TH2F("chi2VCorr","chi2 to VTX corr tr." ,fNActiveLayersITS+1,0,fNActiveLayersITS+1,100,0,100);
-  fHChi2VtxFake = new TH2F("chi2VFake","chi2 to VTX fake tr." ,fNActiveLayersITS+1,0,fNActiveLayersITS+1,100,0,100);
-  fHNCand     = new TH2F("hNCand","Ncand per layer",           fNActiveLayersITS+1,0,fNActiveLayersITS+1,200,0,-1);
-  fHCandCorID = new TH2F("CandCorID","Corr.cand ID per layer", fNActiveLayersITS+1,0,fNActiveLayersITS+1,200,0,-1);
+  fHChi2LrCorr = new TH2F("chi2Cl","chi2 corr cluster",        fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,100,0,fMaxChi2Cl);
+  fHChi2NDFCorr = new TH2F("chi2NDFCorr","chi2/ndf corr tr.",  fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,100,0,fMaxNormChi2NDF);
+  fHChi2NDFFake = new TH2F("chi2NDFFake","chi2/ndf fake tr.",  fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,100,0,fMaxNormChi2NDF);
+  fHChi2VtxCorr = new TH2F("chi2VCorr","chi2 to VTX corr tr." ,fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,100,0,100);
+  fHChi2VtxFake = new TH2F("chi2VFake","chi2 to VTX fake tr." ,fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,100,0,100);
+  fHNCand     = new TH2F("hNCand","Ncand per layer",           fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,200,0,-1);
+  fHCandCorID = new TH2F("CandCorID","Corr.cand ID per layer", fNActiveTrkLayersITS+1,0,fNActiveTrkLayersITS+1,200,0,-1);
   //
   fHChi2MS = new TH2F("chi2ms","chi2ms",100,0,30,10,0,10);
   //
 }
 //_________________________________________________________
-void Detector::InitBkg(double beamenergy){
+void TrkDetector::InitBkg(double beamenergy){
 
   int E=TMath::Nint(beamenergy);
 
@@ -2197,34 +2197,34 @@ void Detector::InitBkg(double beamenergy){
 }
 
 //_____________________________________________________________________
-Bool_t Detector::IsCorrect(Probe *probTr)
+Bool_t TrkDetector::IsCorrect(TrkProbe *probTr)
 {
   if (probTr->GetNFakeITSHits()) return kFALSE;
   return kTRUE;
 }
 
 //_____________________________________________________________________
-void  Detector::SetMinITSHits(int n)
+void  TrkDetector::SetMinITSHits(int n)
 {
-  fMinITSHits = TMath::Min(n,fNActiveLayersITS);
+  fMinITSHits = TMath::Min(n,fNActiveTrkLayersITS);
 }
 
 //_____________________________________________________________________
-void  Detector::SetMinMSHits(int n)
+void  TrkDetector::SetMinMSHits(int n)
 {
-  fMinMSHits = TMath::Min(n,fNActiveLayersMS);
+  fMinMSHits = TMath::Min(n,fNActiveTrkLayersMS);
 }
 //_____________________________________________________________________
-void  Detector::SetMinTRHits(int n)
+void  TrkDetector::SetMinTRHits(int n)
 {
-  fMinTRHits = TMath::Min(n,fNActiveLayersTR);
+  fMinTRHits = TMath::Min(n,fNActiveTrkLayersTR);
 }
 
 //_____________________________________________________________________
-void  Detector::ForceLastActiveLayer(int lr)
+void  TrkDetector::ForceLastActiveTrkLayer(int lr)
 {
-  printf("Attention: overriding last active layer from %d to %d\n",fLastActiveLayer,lr);
-  fLastActiveLayer = lr;
+  printf("Attention: overriding last active layer from %d to %d\n",fLastActiveTrkLayer,lr);
+  fLastActiveTrkLayer = lr;
 }
 
 //=======================================================================================

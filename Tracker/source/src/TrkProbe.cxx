@@ -1,18 +1,18 @@
 #include "LUXELog.h"
-#include "Probe.h"
-#include "Layer.h"
+#include "TrkProbe.h"
+#include "TrkLayer.h"
 #include <TGeoGlobalMagField.h>
 #include <TRandom.h>
 
-ClassImp(Probe)
+ClassImp(TrkProbe)
 
-Int_t    Probe::fgNITSLayers = 0;
-Double_t Probe::fgMissingHitPenalty = 2.;
+Int_t    TrkProbe::fgNITSTrkLayers = 0;
+Double_t TrkProbe::fgMissingHitPenalty = 2.;
 
-Probe::~Probe() {}
+TrkProbe::~TrkProbe() {}
 
 //_______________________________________________________________________
-Probe::Probe() 
+TrkProbe::TrkProbe() 
   :fWeight(1) 
   ,fMass(0.10566)
   ,fChi2(0)
@@ -24,13 +24,13 @@ Probe::Probe()
   ,fNHitsMS(0)
   ,fNHitsTR(0)
   ,fNHitsITSFake(0)
-  ,fInnLrCheck(fgNITSLayers)
+  ,fInnLrCheck(fgNITSTrkLayers)
   ,fTrack()
 {
 }
 
 //_______________________________________________________________________
-Probe::Probe(double *xyz, double *pxyz, Int_t sign, double errLoose) 
+TrkProbe::TrkProbe(double *xyz, double *pxyz, Int_t sign, double errLoose) 
   :fWeight(1) 
   ,fMass(0.10566)
   ,fChi2(0)
@@ -42,7 +42,7 @@ Probe::Probe(double *xyz, double *pxyz, Int_t sign, double errLoose)
   ,fNHitsMS(0)
   ,fNHitsTR(0)
   ,fNHitsITSFake(0)
-  ,fInnLrCheck(fgNITSLayers)
+  ,fInnLrCheck(fgNITSTrkLayers)
   ,fTrack()
 {
   // create track
@@ -55,7 +55,7 @@ Probe::Probe(double *xyz, double *pxyz, Int_t sign, double errLoose)
 }
 
 //_______________________________________________________________________
-Probe::Probe(const Probe& src)
+TrkProbe::TrkProbe(const TrkProbe& src)
 :  TObject(src)
   ,fWeight(src.fWeight)
   ,fMass(src.fMass)
@@ -75,7 +75,7 @@ Probe::Probe(const Probe& src)
 }
 
 //_______________________________________________________________________
-Probe& Probe::operator=(const Probe& src)
+TrkProbe& TrkProbe::operator=(const TrkProbe& src)
 {
   if (this==&src) return *this;
   this->TObject::operator=(src);
@@ -97,7 +97,7 @@ Probe& Probe::operator=(const Probe& src)
 }
   
 //_______________________________________________________________________
-void Probe::Reset() 
+void TrkProbe::Reset() 
 {
   fWeight = 1.;
   fMass=0.14; 
@@ -112,7 +112,7 @@ void Probe::Reset()
 }
   
 //_______________________________________________________________________
-Bool_t Probe::Init(const double *xyz, const double *pxyz, Int_t sign, double errLoose)
+Bool_t TrkProbe::Init(const double *xyz, const double *pxyz, Int_t sign, double errLoose)
 {
   // Init with track position/momentum in usual Lab frame
   // If errLoose>0 then scale initially small errors by this amount
@@ -138,10 +138,10 @@ Bool_t Probe::Init(const double *xyz, const double *pxyz, Int_t sign, double err
 }
 
 //__________________________________________________________________________
-Int_t Probe::Compare(const TObject* obj) const
+Int_t TrkProbe::Compare(const TObject* obj) const
 {
   // compare to tracks
-  const Probe* trc = (Probe*) obj;
+  const TrkProbe* trc = (TrkProbe*) obj;
   if (trc->IsKilled()) {
     if (IsKilled()) return 0;
     return -1;
@@ -155,7 +155,7 @@ Int_t Probe::Compare(const TObject* obj) const
 }
 
 //_______________________________________________________________________
-Bool_t Probe::PropagateToZBxByBz(double z, double maxDZ, Double_t xOverX0, Double_t xTimesRho, Bool_t modeMC)
+Bool_t TrkProbe::PropagateToZBxByBz(double z, double maxDZ, Double_t xOverX0, Double_t xTimesRho, Bool_t modeMC)
 {
   // propagate the track to position Z in uniform material with xOverX0 rad lgt and xTimesRho lgt*density
   double zCurr = GetZ();
@@ -182,7 +182,7 @@ Bool_t Probe::PropagateToZBxByBz(double z, double maxDZ, Double_t xOverX0, Doubl
 }
 
 //_______________________________________________________________________
-Bool_t Probe::PropagateToDCA(Probe* partner)
+Bool_t TrkProbe::PropagateToDCA(TrkProbe* partner)
 {
   // propagate the track to position Z of closest approach to partner track
   //
@@ -205,7 +205,7 @@ Bool_t Probe::PropagateToDCA(Probe* partner)
 
 
 //_______________________________________________________________________
-Double_t Probe::GetSigmaP2() const
+Double_t TrkProbe::GetSigmaP2() const
 {
   // error^2 on total momentum, P = sqrt(1+tgl^2)/(1/pt)
   double pinv = fTrack.GetSigned1Pt();
@@ -224,7 +224,7 @@ Double_t Probe::GetSigmaP2() const
 }
 
 //_______________________________________________________________________
-Double_t Probe::GetSigmaPX2() const
+Double_t TrkProbe::GetSigmaPX2() const
 {
   // error^2 on Px in Lav frame (Z in the tracking frame, = tgl/(1/pt)
   double pinv = fTrack.GetSigned1Pt();
@@ -242,7 +242,7 @@ Double_t Probe::GetSigmaPX2() const
 }
 
 //_______________________________________________________________________
-Double_t Probe::GetSigmaPY2() const
+Double_t TrkProbe::GetSigmaPY2() const
 {
   // error^2 on Py in Lab frame (Y in the tracking frame, = sinp/(1/pt)
   double pinv = fTrack.GetSigned1Pt();
@@ -263,7 +263,7 @@ Double_t Probe::GetSigmaPY2() const
 }
 
 //_______________________________________________________________________
-Double_t Probe::GetSigmaPZ2() const
+Double_t TrkProbe::GetSigmaPZ2() const
 {
   // error^2 on Pz in Lab frame (X in the tracking frame, = (sqrt(1-snp^2)*cosAlp-snp*sinAlp)/(1/pt)
   double pinv = fTrack.GetSigned1Pt();
@@ -283,7 +283,7 @@ Double_t Probe::GetSigmaPZ2() const
 }
 
 //_______________________________________________________________________
-void Probe::ResetCovariance(float err)
+void TrkProbe::ResetCovariance(float err)
 {
   // reset cov matrix
   double *trCov  = (double*)fTrack.GetCovariance();
@@ -299,7 +299,7 @@ void Probe::ResetCovariance(float err)
 }
 
 //_________________________________________________________
-Bool_t Probe::ApplyMSEL(double x2X0, double xTimesRho)
+Bool_t TrkProbe::ApplyMSEL(double x2X0, double xTimesRho)
 {
   // simulate random modification of track params due to the MS
   // note: here we work directly in TrackParameter internal coordinates
@@ -389,7 +389,7 @@ Bool_t Probe::ApplyMSEL(double x2X0, double xTimesRho)
 }
 
 //_______________________________________________________________________
-void Probe::Print(Option_t* opt) const
+void TrkProbe::Print(Option_t* opt) const
 {
   printf("Killed:%d M:%.3f Chi2:%.3f(%.3f) Chi2ITS:%.3f(%.3f) | Wgh:%.2e\nHits: Tot:%2d ITS:%d ITSFake:%d (last check:%d)",
 	 IsKilled(),fMass,GetChi2(),GetNormChi2(1),
@@ -397,7 +397,7 @@ void Probe::Print(Option_t* opt) const
 	 fNHits,fNHitsITS,fNHitsITSFake,fInnLrCheck);
   // hit pattern
   printf(" Pattern: |");
-  for (int i=0;i<fgNITSLayers;i++) {
+  for (int i=0;i<fgNITSTrkLayers;i++) {
     if (!(fHits&(0x1<<i))) printf(".");
     else if ( fFakes&(0x1<<i) ) printf("-");
     else printf("+");
@@ -405,7 +405,7 @@ void Probe::Print(Option_t* opt) const
   printf("|  ");
   TString opts = opt; opts.ToLower();
   if (opts.Contains("clid")) {
-    for (int ilr=0;ilr<fgNITSLayers;ilr++) {
+    for (int ilr=0;ilr<fgNITSTrkLayers;ilr++) {
       printf("%4d|",fClID[ilr]);
     }
   }
@@ -414,7 +414,7 @@ void Probe::Print(Option_t* opt) const
 }
 
 //_______________________________________
-void Probe::AddHit(const Layer* lr, double chi2, Int_t clID) {
+void TrkProbe::AddHit(const TrkLayer* lr, double chi2, Int_t clID) {
   // note: lr is active layer ID
   if (!lr) return;
   fNHits++;
@@ -440,7 +440,7 @@ void Probe::AddHit(const Layer* lr, double chi2, Int_t clID) {
 }
 
 //____________________________________________
-void Probe::ImposeKinematics(const double* xyzLab,const double* cosinesLab,
+void TrkProbe::ImposeKinematics(const double* xyzLab,const double* cosinesLab,
 				   double en, double mass, int charge) 
 {
   // RS: note: we assume p=e here to avoid problem with e+ e- interpreted as muon

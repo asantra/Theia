@@ -1,5 +1,5 @@
-#ifndef DETECTOR_H
-#define DETECTOR_H
+#ifndef TRKDETECTOR_H
+#define TRKDETECTOR_H
 
 #include <TArrayD.h>
 #include <TList.h>
@@ -8,9 +8,9 @@
 #include <TH2F.h>
 #include <TF1.h>
 #include "Utils.h"
-#include "Probe.h"
+#include "TrkProbe.h"
 #include "Cluster.h"
-#include "Layer.h"
+#include "TrkLayer.h"
 #include "Material.h"
 #include <Riostream.h>
 #include <TMaterial.h>
@@ -23,7 +23,7 @@
 class NaCardsInput;
 
 
-class Detector : public TNamed {
+class TrkDetector : public TNamed {
  public:
   static const Double_t kMassP;
   static const Double_t kMassK;
@@ -33,73 +33,73 @@ class Detector : public TNamed {
  public:
   enum {kMagAlice=-1};
   enum {kNoDecay,kDoRealDecay,kApplyDecay};
-  Detector(const char *name="test_detector", const char *title="detector");
-  Detector();
-  ~Detector();
+  TrkDetector(const char *name="test_detector", const char *title="detector");
+  TrkDetector();
+  ~TrkDetector();
   //
   void         ReadMaterials(const char* fname);
   void         ReadSetup(const char* setup, const char* materials);
   TObjArray*   GetMaterials() const {return (TObjArray*)&fMaterials;}
   Material*  GetMaterial(const char* name) const {return (Material*)fMaterials.FindObject(name);}
   //
-  Layer* AddLayer(const char *type, const char *name, Float_t zPos, Float_t radL, Float_t density, Float_t thickness, Float_t xRes=999999, Float_t yRes=999999, Float_t eff=1,Material* mat=0);
+  TrkLayer* AddTrkLayer(const char *type, const char *name, Float_t zPos, Float_t radL, Float_t density, Float_t thickness, Float_t xRes=999999, Float_t yRes=999999, Float_t eff=1,Material* mat=0);
   void         AddBeamPipe(Float_t r, Float_t dr, Float_t radL, Float_t density, Material* mat=0);
   BeamPipe*    GetBeamPipe() const {return fBeamPipe;}
 
-  void         ClassifyLayers();
+  void         ClassifyTrkLayers();
   void         ResetMCTracks(Int_t maxLr);
   //
   void     SetApplyBransonPCorrection(float v = 0.1) {fApplyBransonPCorrection = v;} // set to negative to not apply BP correction
   void     SetIncludeVertex(Bool_t v=kTRUE)       {fIncludeVertex = v;}
   Bool_t   GetIncludeVertex()               const {return fIncludeVertex;}
   //-------------------
-  void         CreateProbe(Probe* adr, double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
-  Probe* CreateProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
-  Probe* PrepareProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
+  void         CreateTrkProbe(TrkProbe* adr, double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
+  TrkProbe* CreateTrkProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
+  TrkProbe* PrepareTrkProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
   Bool_t SolveSingleTrackViaKalman(double pt, double yrap, double phi,double mass, int charge, double x,double y, double z);
   Bool_t SolveSingleTrack(double pt, double yrap, double phi, double mass, int charge, double x=0,double y=0, double z=0, TObjArray* sumArr=0,int nMC=1, int offset=-1);
-  Int_t  PropagateToLayer(Probe* trc, Layer* lrFrom, Layer* lrTo, int dir, Bool_t modeMC=kFALSE);
-  Bool_t PropagateToZBxByBz(Probe* trc,double z, double maxDZ=1.0, Double_t xOverX0=0., Double_t xTimesRho=0., Bool_t modeMC=kFALSE);
+  Int_t  PropagateToTrkLayer(TrkProbe* trc, TrkLayer* lrFrom, TrkLayer* lrTo, int dir, Bool_t modeMC=kFALSE);
+  Bool_t PropagateToZBxByBz(TrkProbe* trc,double z, double maxDZ=1.0, Double_t xOverX0=0., Double_t xTimesRho=0., Bool_t modeMC=kFALSE);
   Bool_t SolveSingleTrackViaKalmanMC(int offset);
   Bool_t SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double phi, double mass, int charge, double x=0,double y=0, double z=0, int offset=-1);
   Bool_t SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentzVector>& pseed, double mass, int charge, int offset=-1, bool doPrint=false);
-  Bool_t TransportKalmanTrackWithMS(Probe *probTr, int maxLr, Bool_t bg=kFALSE);
+  Bool_t TransportKalmanTrackWithMS(TrkProbe *probTr, int maxLr, Bool_t bg=kFALSE);
   Int_t GetFieldReg(double z);
   //-------------------
-  TList*       GetLayers()                 const {return (TList*)&fLayers;}
-  Layer* GetLayer(Int_t i)           const {return (Layer*)fLayers.At(i);}
-  Layer* GetLayer(const char *name)  const {return (Layer*)fLayers.FindObject(name);}
-  Layer* GetLayerITS(int i)          const {return (Layer*)fLayersITS[i];}
-  Layer* GetLayerMS(int i)           const {return (Layer*)fLayersMS[i];}
-  Layer* GetLayerTR(int i)           const {return (Layer*)fLayersTR[i];}
+  TList*       GetTrkLayers()                 const {return (TList*)&fTrkLayers;}
+  TrkLayer* GetTrkLayer(Int_t i)           const {return (TrkLayer*)fTrkLayers.At(i);}
+  TrkLayer* GetTrkLayer(const char *name)  const {return (TrkLayer*)fTrkLayers.FindObject(name);}
+  TrkLayer* GetTrkLayerITS(int i)          const {return (TrkLayer*)fTrkLayersITS[i];}
+  TrkLayer* GetTrkLayerMS(int i)           const {return (TrkLayer*)fTrkLayersMS[i];}
+  TrkLayer* GetTrkLayerTR(int i)           const {return (TrkLayer*)fTrkLayersTR[i];}
   //
   void         SetDefStepAir(Double_t v=1) {fDefStepAir = v;}
   void         SetDefStepMat(Double_t v=1) {fDefStepMat = v;}
   //
-  Probe* GetProbe()                  const {return (Probe*)&fProbe;}
+  TrkProbe* GetTrkProbe()                  const {return (TrkProbe*)&fTrkProbe;}
   Double_t     GetZDecay()                 const {return fZDecay;}
 
-  Probe* GetMuBransonCorrVtx()    const {
-    return fMuTrackBCVertex.GetUniqueID()==0 ? (Probe*)&fMuTrackBCVertex : 0;
+  TrkProbe* GetMuBransonCorrVtx()    const {
+    return fMuTrackBCVertex.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackBCVertex : 0;
   }
-  Probe* GetMuBransonCorrLastITS()    const {
-    return fMuTrackBCLastITS.GetUniqueID()==0 ? (Probe*)&fMuTrackBCLastITS : 0;
+  TrkProbe* GetMuBransonCorrLastITS()    const {
+    return fMuTrackBCLastITS.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackBCLastITS : 0;
   }
-  Probe* GetMuLastITS()    const {
-    return fMuTrackLastITS.GetUniqueID()==0 ? (Probe*)&fMuTrackLastITS : 0;
+  TrkProbe* GetMuLastITS()    const {
+    return fMuTrackLastITS.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackLastITS : 0;
   }
-  Probe* GetMuVtx()    const {
-    return fMuTrackVertex.GetUniqueID()==0 ? (Probe*)&fMuTrackVertex : 0;
+  TrkProbe* GetMuVtx()    const {
+    return fMuTrackVertex.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackVertex : 0;
   }
   
   //
-  Bool_t       UpdateTrack(Probe* trc, const Layer* lr, const Cluster* cl) const;
-  Bool_t       NeedToKill(Probe* probe) const;
+  Bool_t       UpdateTrack(TrkProbe* trc, const TrkLayer* lr, const Cluster* cl) const;
+  Bool_t       NeedToKill(TrkProbe* probe) const;
   Bool_t       GetUseBackground()          const {return fUseBackground;}
   void         SetUseBackground(Bool_t v=kTRUE)  {fUseBackground = v;}
   void         CheckClusters(int i1, int i2, int i3, int i4);
-  void         CheckTrackProlongations(Probe *probe, Layer* lrP, Layer* lr, bool doPrint=false);
-  Bool_t       IsCorrect(Probe *probe);
+  void         CheckTrackProlongations(TrkProbe *probe, TrkLayer* lrP, TrkLayer* lr, bool doPrint=false);
+  Bool_t       IsCorrect(TrkProbe *probe);
   void         RequirePattern(UInt_t patt);
   void         SetMinITSHits(int n);
   void         SetMinMSHits(int n);
@@ -135,7 +135,7 @@ class Detector : public TNamed {
     tmpLab[1] = y;
     tmpLab[2] = z;
     // assign in tracking frame
-    Probe::Lab2Trk(tmpLab, fRefVtx);
+    TrkProbe::Lab2Trk(tmpLab, fRefVtx);
   }
   void         UseTrackOriginAsVertex() {
     fImposeVertexPosition = kFALSE;
@@ -144,15 +144,15 @@ class Detector : public TNamed {
   //
   void Print(const Option_t* opt = "") const; 
   //
-  Int_t GetNumberOfActiveLayers()    const {return fNActiveLayers;}  
-  Int_t GetNumberOfActiveLayersITS() const {return fNActiveLayersITS;}
-  Int_t GetNumberOfActiveLayersMS()  const {return fNActiveLayersMS;}
-  Int_t GetNumberOfActiveLayersTR()  const {return fNActiveLayersTR;}
-  void   SetLastActiveLayerTracked(int lr)   {fLastActiveLayerTracked = lr;}
-  Int_t  GetLastActiveLayerTracked() const {return fLastActiveLayerTracked;}
-  Int_t  GetLastActiveLayer()        const {return fLastActiveLayer;}
-  Int_t  GetLastActiveLayerITS()     const {return fLastActiveLayerITS;}
-  void  ForceLastActiveLayer(int lr);
+  Int_t GetNumberOfActiveTrkLayers()    const {return fNActiveTrkLayers;}  
+  Int_t GetNumberOfActiveTrkLayersITS() const {return fNActiveTrkLayersITS;}
+  Int_t GetNumberOfActiveTrkLayersMS()  const {return fNActiveTrkLayersMS;}
+  Int_t GetNumberOfActiveTrkLayersTR()  const {return fNActiveTrkLayersTR;}
+  void   SetLastActiveTrkLayerTracked(int lr)   {fLastActiveTrkLayerTracked = lr;}
+  Int_t  GetLastActiveTrkLayerTracked() const {return fLastActiveTrkLayerTracked;}
+  Int_t  GetLastActiveTrkLayer()        const {return fLastActiveTrkLayer;}
+  Int_t  GetLastActiveTrkLayerITS()     const {return fLastActiveTrkLayerITS;}
+  void  ForceLastActiveTrkLayer(int lr);
 
   Double_t GetNCh() const {return fNCh;}
   Double_t GetNChPi() const {return fNChPi;}
@@ -170,7 +170,7 @@ class Detector : public TNamed {
   Double_t ThetaMCS                 ( Double_t mass, Double_t RadLength, Double_t momentum ) const;
 
   Double_t HitDensity(double xLab,double ylab,double zlab) const;
-  void     PerformDecay(Probe* trc);
+  void     PerformDecay(TrkProbe* trc);
   //
   float GetChi2MuAtVtx() const {return fChi2MuVtx;}
   
@@ -195,30 +195,30 @@ class Detector : public TNamed {
   // ------------------------------
   //
  protected:
-  Int_t  fNLayers;               // total number of layers in the model
-  Int_t  fNActiveLayers;         // number of active layers in the model
-  Int_t  fNActiveLayersITS;      // number of active ITS layers in the model
-  Int_t  fNActiveLayersMS;      // number of active MS layers in the model
-  Int_t  fNActiveLayersTR;      // number of active Trigger layers in the model
-  Int_t  fLastActiveLayerITS;    // id of last active ITS layer
-  Int_t  fLastActiveLayer;       // id of last active layer
-  Int_t  fLastActiveLayerTracked;    // id of last active layer really used for tracking of given pt
+  Int_t  fNTrkLayers;               // total number of layers in the model
+  Int_t  fNActiveTrkLayers;         // number of active layers in the model
+  Int_t  fNActiveTrkLayersITS;      // number of active ITS layers in the model
+  Int_t  fNActiveTrkLayersMS;      // number of active MS layers in the model
+  Int_t  fNActiveTrkLayersTR;      // number of active Trigger layers in the model
+  Int_t  fLastActiveTrkLayerITS;    // id of last active ITS layer
+  Int_t  fLastActiveTrkLayer;       // id of last active layer
+  Int_t  fLastActiveTrkLayerTracked;    // id of last active layer really used for tracking of given pt
   //-------------------------
-  TList  fLayers;                // List of layer pointers
-  TObjArray fLayersITS;          // vertex tracker layers
-  TObjArray fLayersMS;           // MS layers
-  TObjArray fLayersTR;           // Trigger layers
+  TList  fTrkLayers;                // List of layer pointers
+  TObjArray fTrkLayersITS;          // vertex tracker layers
+  TObjArray fTrkLayersMS;           // MS layers
+  TObjArray fTrkLayersTR;           // Trigger layers
   BeamPipe* fBeamPipe;           // special object - beam pipe
-  Layer* fVtx;             // special layer: vertex
+  TrkLayer* fVtx;             // special layer: vertex
   TObjArray fMaterials;                                 // defined materials
   Int_t     fMagFieldID;                                // type of mag field
   //
   //-------------RS---------------------------
-  Probe fProbe;
-  Probe fMuTrackVertex;
-  Probe fMuTrackLastITS;  
-  Probe fMuTrackBCVertex;
-  Probe fMuTrackBCLastITS;  
+  TrkProbe fTrkProbe;
+  TrkProbe fMuTrackVertex;
+  TrkProbe fMuTrackLastITS;  
+  TrkProbe fMuTrackBCVertex;
+  TrkProbe fMuTrackBCLastITS;  
   
   Bool_t   fExternalInput; // MC particles are set externally
   Bool_t   fIncludeVertex;
@@ -286,7 +286,7 @@ class Detector : public TNamed {
   //
  protected:
 
-  ClassDef(Detector,1);
+  ClassDef(TrkDetector,1);
 };
 
 //====================================================

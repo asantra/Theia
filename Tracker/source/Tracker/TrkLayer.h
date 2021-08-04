@@ -1,19 +1,19 @@
-#ifndef LAYER_H
-#define LAYER_H
+#ifndef TRKLAYER_H
+#define TRKLAYER_H
 
 #include <TNamed.h>
 #include <TClonesArray.h>
 #include "Cluster.h"
-#include "Probe.h"
+#include "TrkProbe.h"
 #include "Material.h"
 
 
-class Layer : public TNamed {
+class TrkLayer : public TNamed {
 public:
   enum {kTypeNA=-1,kVTX,kITS,kMS,kTRIG,kABS,kDUMMY,kBitVertex=BIT(15)};
   enum {kMaxAccReg = 5};
-  ~Layer();
-  Layer(const char *name);
+  ~TrkLayer();
+  TrkLayer(const char *name);
   Float_t GetZ()         const {return fZ;}
   Float_t GetRMin()      const {return fRMin[0];}
   Float_t GetRMax()      const {return fRMax[fNAccReg-1];}
@@ -45,7 +45,7 @@ public:
     return (id<0) ? fYRes[0] : fYRes[id];
   }
 
-  Float_t GetLayerEff()  const {
+  Float_t GetTrkLayerEff()  const {
     return fEff;
   }
   
@@ -59,7 +59,7 @@ public:
   void    SetRMax(Float_t v, int i=0)      {fRMax[i] = v;}
   void    SetXRes(Float_t v, int i=0)      {fXRes[i] = v;}
   void    SetYRes(Float_t v, int i=0)      {fYRes[i] = v;}
-  void    SetLayerEff(Float_t v)  {fEff = v;}
+  void    SetTrkLayerEff(Float_t v)  {fEff = v;}
 
   void    SetX2X0(Float_t v)      {fx2X0 = v;}
   void    SetXTimesRho(Float_t v) {fXRho = v;}
@@ -84,14 +84,14 @@ public:
   Cluster*        GetMCCluster()           const {return (Cluster*)&fClMC;}
   Cluster*        GetCorCluster()          const {return (Cluster*)&fClCorr;}
   //
-  void                  SetAnProbe(Probe& prb)   {fTrCorr = prb;}
-  Probe*          GetAnProbe()             const {return (Probe*)&fTrCorr;}
+  void                  SetAnTrkProbe(TrkProbe& prb)   {fTrCorr = prb;}
+  TrkProbe*          GetAnTrkProbe()             const {return (TrkProbe*)&fTrCorr;}
   Int_t                 GetNMCTracks()           const {return fTrMC.GetEntries();}
   TClonesArray*         GetMCTracks()            const {return (TClonesArray*)&fTrMC;}
-  Probe*          GetMCTrack(Int_t it)     const {return (Probe*)fTrMC[it];}
+  TrkProbe*          GetMCTrack(Int_t it)     const {return (TrkProbe*)fTrMC[it];}
   Int_t                 GetNBgClusters()         const {return fClBg.GetEntries();}
-  Probe*          AddMCTrack(Probe* src=0);
-  Probe*          GetWinnerMCTrack();
+  TrkProbe*          AddMCTrack(TrkProbe* src=0);
+  TrkProbe*          GetWinnerMCTrack();
   //
   Double_t              GetSig2EstX()            const {return fSig2EstX;}
   Double_t              GetSig2EstY()            const {return fSig2EstY;}
@@ -135,17 +135,17 @@ public:
   Cluster   fClMC;       // MC cluster (from MS scattered track)
   TClonesArray    fClBg;       // bg clusters for MC
   //
-  Probe     fTrCorr;     // ideal track
+  TrkProbe     fTrCorr;     // ideal track
   TClonesArray    fTrMC;       // MC tracks
   //
   Material*     fMaterial;
   //
   static Double_t fgDefEff;
-  ClassDef(Layer,2);
+  ClassDef(TrkLayer,2);
 };
 
 //_________________________________________________________________
-inline Int_t  Layer::AddBgCluster(double x,double y,double z, int id)
+inline Int_t  TrkLayer::AddBgCluster(double x,double y,double z, int id)
 {
   int n=GetNBgClusters(); 
   new (fClBg[n]) Cluster(x,y,z, id); 
@@ -153,9 +153,9 @@ inline Int_t  Layer::AddBgCluster(double x,double y,double z, int id)
 }
 
 //______________________________________________________
-class BeamPipe : public Layer {
+class BeamPipe : public TrkLayer {
 public:
-  BeamPipe(char* name) :  Layer(name) {}
+  BeamPipe(char* name) :  TrkLayer(name) {}
   //
   void SetRadius(float r)             {SetZ(r);}
   //

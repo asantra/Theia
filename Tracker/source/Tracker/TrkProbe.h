@@ -1,14 +1,14 @@
-#ifndef PROBE_H
-#define PROBE_H
+#ifndef TRKPROBE_H
+#define TRKPROBE_H
 
 #include "TrackParameter.h"
 
-class Layer;
+class TrkLayer;
 
 
 
 
-class Probe: public TObject {
+class TrkProbe: public TObject {
 
  public:
   enum {kBitKilled=BIT(14)};
@@ -16,11 +16,11 @@ class Probe: public TObject {
   enum {kY2=0,kZ2=2,kSnp2=5,kTgl2=9,kPtI2=14};
   enum {kY,kZ,kSnp,kTgl,kPtI};
   //
-  ~Probe();
-  Probe();
-  Probe(double *xyz, double *pxyz, Int_t sign, double errLoose=-1);  
-  Probe(const Probe& src);
-  Probe& operator=(const Probe& src);
+  ~TrkProbe();
+  TrkProbe();
+  TrkProbe(double *xyz, double *pxyz, Int_t sign, double errLoose=-1);  
+  TrkProbe(const TrkProbe& src);
+  TrkProbe& operator=(const TrkProbe& src);
   void ImposeKinematics(const double* xyzLab,const double* cosinesLab, double en, double mass, int charge);
   //
   Int_t GetTrID()     const   {return int(GetUniqueID())-1;}
@@ -48,28 +48,28 @@ class Probe: public TObject {
   void      SetChi2ITS(double chi2)                     {fChi2ITS = chi2;}
   void      AddChi2(double chi2)                        {fChi2 += chi2;}
   void      AddChi2ITS(double chi2)                     {fChi2ITS += chi2;}
-  void      SetInnerLrChecked(Int_t n)                  {if (n<fgNITSLayers) fInnLrCheck = n;}
+  void      SetInnerLrChecked(Int_t n)                  {if (n<fgNITSTrkLayers) fInnLrCheck = n;}
   Int_t     GetNITSHits()                         const {return fNHitsITS;}
   Int_t     GetNMSHits()                          const {return fNHitsMS;}
   Int_t     GetNTRHits()                          const {return fNHitsTR;}
   Int_t     GetNFakeITSHits()                     const {return fNHitsITSFake;}
   Int_t     GetNHits()                            const {return fNHits;}
-  Int_t     GetInnerLayerChecked()                const {return fInnLrCheck;}
+  Int_t     GetInnerTrkLayerChecked()                const {return fInnLrCheck;}
   UInt_t&   GetHitsPatt()                               {return fHits;}
   UInt_t&   GetFakesPatt()                              {return fFakes;}
 
   Double_t  GetNormChi2(Bool_t penalize=kFALSE)      const;
   Double_t  GetNormChi2ITS(Bool_t penalize=kFALSE)   const;
-  void      AddHit(const Layer*lr , double chi2, Int_t clID=-1);
+  void      AddHit(const TrkLayer*lr , double chi2, Int_t clID=-1);
   void      ResetHit(Int_t lr);
-  Bool_t    IsHit(Int_t lr)                       const {return (lr<fgNITSLayers) ? IsWBit(fHits,lr)  : kFALSE;}
-  Bool_t    IsHitFake(Int_t lr)                   const {return (lr<fgNITSLayers) ? IsWBit(fFakes,lr) : kFALSE;}
+  Bool_t    IsHit(Int_t lr)                       const {return (lr<fgNITSTrkLayers) ? IsWBit(fHits,lr)  : kFALSE;}
+  Bool_t    IsHitFake(Int_t lr)                   const {return (lr<fgNITSTrkLayers) ? IsWBit(fFakes,lr) : kFALSE;}
 
   Bool_t   ApplyMSEL(double x2X0, double xTimesRho);
   Bool_t   CorrectForMeanMaterial(double xOverX0, double xTimesRho, Bool_t modeMC=kFALSE, Bool_t anglecorr=kFALSE);
   Bool_t   PropagateToZBxByBz(double z, double maxDZ=1.0, Double_t xOverX0=0., Double_t xTimesRho=0., Bool_t modeMC=kFALSE);
   Bool_t   PropagateToZBxByBz(double z, const double *bxyz);
-  Bool_t   PropagateToDCA(Probe* partner);
+  Bool_t   PropagateToDCA(TrkProbe* partner);
   Bool_t   Update(Double_t cov[3]);
 
   Double_t GetR()                        const {double x=GetX(),y=GetY(),r=x*x+y*y; return r>0?TMath::Sqrt(r):0;}
@@ -99,8 +99,8 @@ class Probe: public TObject {
   static void   SetWBit(UInt_t &patt,UInt_t bit)               {patt |= 0x1<<bit;}
   static void   ResetWBit(UInt_t &patt,UInt_t bit)             {patt &= ~(0x1<<bit);}
   static Bool_t IsWBit(const UInt_t &patt,const UInt_t bit)    {return patt&(0x1<<bit);}
-  static void   SetNITSLayers(Int_t n)                         {fgNITSLayers = n;}
-  static int    GetNITSLayers()                                {return fgNITSLayers;}
+  static void   SetNITSTrkLayers(Int_t n)                         {fgNITSTrkLayers = n;}
+  static int    GetNITSTrkLayers()                                {return fgNITSTrkLayers;}
   //
   static Double_t GetMissingHitPenalty()                        {return fgMissingHitPenalty;}
   static void     SetMissingHitPenalty(double p=2.)             {fgMissingHitPenalty = p;}
@@ -130,14 +130,14 @@ class Probe: public TObject {
   Int_t    fClID[kMaxITSLr]; // id's of attached clusters
   TrackParameter fTrack;  // track params
   //
-  static Int_t    fgNITSLayers;
+  static Int_t    fgNITSTrkLayers;
   static Double_t fgMissingHitPenalty;  //
-  ClassDef(Probe,1)
+  ClassDef(TrkProbe,1)
 };
 /*
 // RS: swap adapted for the field along lab X axis
 //_______________________________________________________________________
-inline void  Probe::Lab2Trk(const double *vLab, double *vTrk)
+inline void  TrkProbe::Lab2Trk(const double *vLab, double *vTrk)
 {
   // convert alice coordinates to modified
   vTrk[0] = vLab[2];
@@ -146,7 +146,7 @@ inline void  Probe::Lab2Trk(const double *vLab, double *vTrk)
 }
 
 //_______________________________________________________________________
-inline void  Probe::Trk2Lab(const double *vTrk, double *vLab)
+inline void  TrkProbe::Trk2Lab(const double *vTrk, double *vLab)
 {
   // convert modified coordinates to Lab ones
   vLab[0] =-vTrk[2];
@@ -157,7 +157,7 @@ inline void  Probe::Trk2Lab(const double *vTrk, double *vLab)
 
 // RS: swap adapted for the field along lab Y axis
 //_______________________________________________________________________
-inline void  Probe::Lab2Trk(const double *vLab, double *vTrk)
+inline void  TrkProbe::Lab2Trk(const double *vLab, double *vTrk)
 {
   // convert alice coordinates to modified
   vTrk[0] = vLab[2];
@@ -166,7 +166,7 @@ inline void  Probe::Lab2Trk(const double *vLab, double *vTrk)
 }
 
 //_______________________________________________________________________
-inline void  Probe::Trk2Lab(const double *vTrk, double *vLab)
+inline void  TrkProbe::Trk2Lab(const double *vTrk, double *vLab)
 {
   // convert modified coordinates to Lab ones
   vLab[0] = vTrk[1];
@@ -176,7 +176,7 @@ inline void  Probe::Trk2Lab(const double *vTrk, double *vLab)
 
 
 //_______________________________________________________________________
-inline void Probe::GetXYZ(double *xyz) const
+inline void TrkProbe::GetXYZ(double *xyz) const
 {
   // track position in Lab coordinates
   double xyzTrk[3];
@@ -185,7 +185,7 @@ inline void Probe::GetXYZ(double *xyz) const
 }
 
 //_______________________________________________________________________
-inline void Probe::GetPXYZ(double *pxyz) const
+inline void TrkProbe::GetPXYZ(double *pxyz) const
 {
   // track position in Lab coordinates
   double pxyzTrk[3];
@@ -194,7 +194,7 @@ inline void Probe::GetPXYZ(double *pxyz) const
 }
 
 //_______________________________________________________________________
-inline Bool_t Probe::PropagateToZBxByBz(double z, const double *bxyz)
+inline Bool_t TrkProbe::PropagateToZBxByBz(double z, const double *bxyz)
 {
   //
   //  return fTrack.PropagateToBxByBz(NegDir() ? -z:z,bxyz);
@@ -206,14 +206,14 @@ inline Bool_t Probe::PropagateToZBxByBz(double z, const double *bxyz)
 }
 
 //_______________________________________________________________________
-inline Bool_t Probe::Update(Double_t p[2],Double_t cov[3])
+inline Bool_t TrkProbe::Update(Double_t p[2],Double_t cov[3])
 {
   // update with measurement in the plane normal to Z axis (in Lab X,Y axis) 
   return fTrack.Update(p,cov);
 }
 
 //_______________________________________________________________________
-inline Bool_t Probe::Update(Double_t cov[3])
+inline Bool_t TrkProbe::Update(Double_t cov[3])
 {
   // dummy update with measurement errors in the plane normal to Z axis (in Lab X,Y axis) 
   //  printf("Before update %f %f %f\n",cov[0],cov[1],cov[2]); fTrack.Print();
@@ -224,25 +224,25 @@ inline Bool_t Probe::Update(Double_t cov[3])
 }
 
 //_______________________________________
-inline Double_t Probe::GetNormChi2(Bool_t penalize) const
+inline Double_t TrkProbe::GetNormChi2(Bool_t penalize) const
 {
   // normalized chi2, penilized for missing hits
   if (fNHits<3) return 0;
   double chi2 = fChi2;
   if (penalize) {
-    int nMiss = fgNITSLayers - fNHitsITS - fInnLrCheck;
+    int nMiss = fgNITSTrkLayers - fNHitsITS - fInnLrCheck;
     chi2 +=  fgMissingHitPenalty*nMiss;
   }
   return chi2/( (fNHits<<1)-kNDOF);
 }
 
 //_______________________________________
-inline Double_t Probe::GetNormChi2ITS(Bool_t penalize) const
+inline Double_t TrkProbe::GetNormChi2ITS(Bool_t penalize) const
 {
   // normalized chi2, penalized for missing hits
   double chi2 = fChi2ITS;
   if (penalize) {
-    int nMiss = fgNITSLayers - fNHitsITS - fInnLrCheck;
+    int nMiss = fgNITSTrkLayers - fNHitsITS - fInnLrCheck;
     chi2 += fgMissingHitPenalty*nMiss;
   }
   if (fNHitsITS<3) return chi2;
@@ -251,15 +251,15 @@ inline Double_t Probe::GetNormChi2ITS(Bool_t penalize) const
 }
 
 //_______________________________________
-inline void Probe::ResetHit(Int_t lr) {
+inline void TrkProbe::ResetHit(Int_t lr) {
   // note: lr is active layer ID
-  if (lr>=fgNITSLayers) return; 
+  if (lr>=fgNITSTrkLayers) return; 
   if (IsWBit(fHits,lr))  {fNHitsITS--;     ResetWBit(fHits,lr);}
   if (IsWBit(fFakes,lr)) {fNHitsITSFake--; ResetWBit(fFakes,lr);}
 }
 
 //_______________________________________
-inline Bool_t Probe::CorrectForMeanMaterial(double xOverX0, double xTimesRho, Bool_t modeMC, Bool_t anglecorr)
+inline Bool_t TrkProbe::CorrectForMeanMaterial(double xOverX0, double xTimesRho, Bool_t modeMC, Bool_t anglecorr)
 {
   Bool_t res;
   if (modeMC) {

@@ -1,6 +1,6 @@
 #if !defined(__CINT__) || defined(__MAKECINT__)
-#include "Detector.h"
-#include "Probe.h"
+#include "TrkDetector.h"
+#include "TrkProbe.h"
 #include "TLorentzVector.h"
 #include "TGenPhaseSpace.h"
 #include "TRandom.h"
@@ -51,7 +51,7 @@ typedef map<TString, TH2D* >         TMapTSTH2D;
 TString storage =  gSystem->ExpandPathName("$STORAGEDIR");
 
 double vX=0,vY=0,vZ=0; // event vertex
-Detector* det = 0;
+TrkDetector* det = 0;
 vector<double>* zlayer = new vector<double>;
 double meMeV = 0.5109989461; //MeV
 double meGeV = meMeV/1000.;
@@ -242,20 +242,20 @@ int cache_clusters(vector<TPolyMarker3D*>* clusters_xyz, vector<vector<int> >* c
 
 void reset_layers_all()
 {
-	for(Int_t l=0 ; l<det->GetLayers()->GetEntries() ; l++)
+	for(Int_t l=0 ; l<det->GetTrkLayers()->GetEntries() ; l++)
 	{
-		det->GetLayer(l)->ResetBgClusters();
-		det->GetLayer(l)->ResetMCTracks();
-		det->GetLayer(l)->Reset();
+		det->GetTrkLayer(l)->ResetBgClusters();
+		det->GetTrkLayer(l)->ResetMCTracks();
+		det->GetTrkLayer(l)->Reset();
 	}
 }
 
 void reset_layers_tracks(Int_t skip=-1)
 {
 	Int_t l0 = (skip>=0) ? skip : 0;
-	for(Int_t l=l0 ; l<det->GetLayers()->GetEntries() ; l++)
+	for(Int_t l=l0 ; l<det->GetTrkLayers()->GetEntries() ; l++)
 	{
-		det->GetLayer(l)->ResetMCTracks();
+		det->GetTrkLayer(l)->ResetMCTracks();
 	}
 }
 
@@ -267,8 +267,8 @@ void add_bkg_cluster(int iLayer, float x, float y, float z, int id)
 	clxyzLab[0]=x;
 	clxyzLab[1]=y;
 	clxyzLab[2]=z;
-	Probe::Lab2Trk(clxyzLab, clxyzTrk);
-	det->GetLayer(iLayer)->AddBgCluster(clxyzTrk[0], clxyzTrk[1], clxyzTrk[2], id);
+	TrkProbe::Lab2Trk(clxyzLab, clxyzTrk);
+	det->GetTrkLayer(iLayer)->AddBgCluster(clxyzTrk[0], clxyzTrk[1], clxyzTrk[2], id);
 }
 
 void add_all_clusters(TString side)
@@ -290,17 +290,17 @@ void add_all_clusters(TString side)
 		}
 	}	
 	/// sort clusters
-	for(int l=0 ; l<det->GetLayers()->GetEntries() ; l++)
+	for(int l=0 ; l<det->GetTrkLayers()->GetEntries() ; l++)
 	{
-		det->GetLayer(l)->GetMCCluster()->Kill();
-		det->GetLayer(l)->SortBGClusters(); /// sort!!!
+		det->GetTrkLayer(l)->GetMCCluster()->Kill();
+		det->GetTrkLayer(l)->SortBGClusters(); /// sort!!!
 		
 		/// after sorting, need to map the cluster ids to their indices!!!
 		bool active = (l==1 or l==3 or l==5 or l==7);
 		if(!active) continue;
-		for(int n=0 ; n<det->GetLayer(l)->GetNBgClusters() ; ++n)
+		for(int n=0 ; n<det->GetTrkLayer(l)->GetNBgClusters() ; ++n)
 		{
-			Cluster *cl = det->GetLayer(l)->GetBgCluster(n);
+			Cluster *cl = det->GetTrkLayer(l)->GetBgCluster(n);
 			int id = cl->GetTrID();
 			cached_clusters_all_ids.insert( make_pair(id,n) );
 		}
@@ -312,9 +312,9 @@ void print_all_clusters(TString side, bool doprint = true)
 	if(!doprint) return;
 	for(int l=1 ; l<=7 ; l+=2) // active layers
 	{
-		for(int c=0 ; c<det->GetLayer(l)->GetNBgClusters() ; c++)
+		for(int c=0 ; c<det->GetTrkLayer(l)->GetNBgClusters() ; c++)
 		{
-			Cluster* cluster = det->GetLayer(l)->GetBgCluster(c);
+			Cluster* cluster = det->GetTrkLayer(l)->GetBgCluster(c);
 			int  id = cluster->GetTrID();
 			float x = cluster->GetXLab();
 			float y = cluster->GetYLab();
@@ -334,9 +334,9 @@ int fill_output_clusters(TString side, vector<TPolyMarker3D*>& cxyz, vector<int>
 	int nclusters = 0;
 	for(int l=1 ; l<=7 ; l+=2) // active layers
 	{
-		for(int c=0 ; c<det->GetLayer(l)->GetNBgClusters() ; c++)
+		for(int c=0 ; c<det->GetTrkLayer(l)->GetNBgClusters() ; c++)
 		{
-			Cluster* cluster = det->GetLayer(l)->GetBgCluster(c);
+			Cluster* cluster = det->GetTrkLayer(l)->GetBgCluster(c);
 			int  id  = cluster->GetTrID();
 			float x  = cluster->GetXLab();
 			float y  = cluster->GetYLab();
@@ -1081,7 +1081,7 @@ int main(int argc, char *argv[])
 				n_solve++;
 				
 				// get the reconstructed propagated to the vertex 
-				Probe* trw = det->GetLayer(0)->GetWinnerMCTrack();
+				TrkProbe* trw = det->GetTrkLayer(0)->GetWinnerMCTrack();
 				if(!trw)            continue; // track was not reconstructed
 				if(trw->IsKilled()) continue; // track was killed
 				n_recos++;
@@ -1099,10 +1099,10 @@ int main(int argc, char *argv[])
 				int win_cls_inx4 = cached_clusters_all_ids[win_cls_id4];
 				if(doPrint) cout << "going to kill: id1="<<win_cls_id1<<", id2="<<win_cls_id2<<", id3="<<win_cls_id3<<", id4="<<win_cls_id4<<endl;
 				if(doPrint) cout << "               ix1="<<win_cls_inx1<<", ix2="<<win_cls_inx2<<", ix3="<<win_cls_inx3<<", ix4="<<win_cls_inx4<<endl;
-				if(win_cls_id1>0) { det->GetLayer(1)->GetBgCluster( win_cls_inx1 )->Kill(); }
-				if(win_cls_id2>0) { det->GetLayer(3)->GetBgCluster( win_cls_inx2 )->Kill(); }
-				if(win_cls_id3>0) { det->GetLayer(5)->GetBgCluster( win_cls_inx3 )->Kill(); }
-				if(win_cls_id4>0) { det->GetLayer(7)->GetBgCluster( win_cls_inx4 )->Kill(); }
+				if(win_cls_id1>0) { det->GetTrkLayer(1)->GetBgCluster( win_cls_inx1 )->Kill(); }
+				if(win_cls_id2>0) { det->GetTrkLayer(3)->GetBgCluster( win_cls_inx2 )->Kill(); }
+				if(win_cls_id3>0) { det->GetTrkLayer(5)->GetBgCluster( win_cls_inx3 )->Kill(); }
+				if(win_cls_id4>0) { det->GetTrkLayer(7)->GetBgCluster( win_cls_inx4 )->Kill(); }
 				if(doPrint) det->CheckClusters(win_cls_inx1,win_cls_inx2,win_cls_inx3,win_cls_inx4);
 				
 				vector<int> vrecid{ win_cls_id1,win_cls_id2,win_cls_id3,win_cls_id4 };
