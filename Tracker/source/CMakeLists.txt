@@ -8,7 +8,7 @@ file(GLOB SRC
     "src/*.cxx"
 )
 
-root_generate_dictionary(Tracker_Dict TrkDetector.h Tracker.h Material.h Cluster.h TrkLayer.h TrkProbe.h DrawProbe.h TrackParameter.h TTreeStream.h LINKDEF Tracker/Tracker_LinkDef.h)
+root_generate_dictionary(Tracker_Dict TrkDetector.h Material.h Cluster.h TrkLayer.h TrkProbe.h DrawProbe.h TrackParameter.h TTreeStream.h LINKDEF Tracker/Tracker_LinkDef.h)
 add_library(Tracker SHARED ${SRC} Tracker_Dict.cxx)
 
 target_link_libraries(Tracker PUBLIC ${ROOT_LIBRARIES} ROOT::Geom PUBLIC Magnets Logger)

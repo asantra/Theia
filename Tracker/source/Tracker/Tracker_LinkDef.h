@@ -4,7 +4,7 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
-#pragma link C++ class Tracker+;
+
 #pragma link C++ class TrkLayer+;
 #pragma link C++ class Cluster+;
 #pragma link C++ class TrkProbe+;
