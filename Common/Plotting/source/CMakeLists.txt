@@ -1,13 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
-project(Hists LANGUAGES CXX)
-
-# Finding the ROOT package
-find_package(ROOT CONFIG REQUIRED)
-
-
-include("${ROOT_USE_FILE}")
-separate_arguments(ROOT_EXE_LINKER_FLAGS)
 
 
 include_directories(Plotting)

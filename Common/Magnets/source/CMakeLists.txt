@@ -1,15 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
-project(MagnetClass LANGUAGES CXX)
-find_package(ROOT CONFIG REQUIRED)
-include("${ROOT_USE_FILE}")
-separate_arguments(ROOT_EXE_LINKER_FLAGS)
-
-
-### get the path of THEIA
-if (DEFINED ENV{THEIAPATH})
-  set(THEIAPATH "$ENV{THEIAPATH}" CACHE INTERNAL "Copied from environment variable")
-endif()
 
 include_directories(Magnets)
 
@@ -19,7 +7,7 @@ file(GLOB SRC
 )
 
 ### generate root dictionary, essential for building shared library
-ROOT_GENERATE_DICTIONARY(Magnets_Dict Magnets.h Utils.h LINKDEF Magnets/Magnets_LinkDef.h)
+root_generate_dictionary(Magnets_Dict Magnets.h Utils.h LINKDEF Magnets/Magnets_LinkDef.h)
 
 add_library(Magnets SHARED ${SRC} Magnets_Dict.cxx)
 

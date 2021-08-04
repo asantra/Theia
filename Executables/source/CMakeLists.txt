@@ -1,14 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
 
-project(Executables LANGUAGES CXX)
-find_package(ROOT CONFIG REQUIRED)
-include("${ROOT_USE_FILE}")
-separate_arguments(ROOT_EXE_LINKER_FLAGS)
-
-### get the path of THEIA
-if (DEFINED ENV{THEIAPATH})
-  set(THEIAPATH "$ENV{THEIAPATH}" CACHE INTERNAL "Copied from environment variable")
-endif()
 
 add_executable(TrackReconstruction Executables/Root/Reconstruction.cxx)
 

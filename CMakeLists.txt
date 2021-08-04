@@ -12,6 +12,11 @@ find_package(ROOT CONFIG REQUIRED)
 include("${ROOT_USE_FILE}")
 separate_arguments(ROOT_EXE_LINKER_FLAGS)
 
+### get the path of THEIA
+if (DEFINED ENV{THEIAPATH})
+  set(THEIAPATH "$ENV{THEIAPATH}" CACHE INTERNAL "Copied from environment variable")
+endif()
+
 
 # Add your dependencies in the order you want them to build.
 add_subdirectory(Common/ConfigReader/source)
