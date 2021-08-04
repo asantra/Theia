@@ -10,7 +10,6 @@
 #pragma link C++ class TrkProbe+;
 #pragma link C++ class DrawProbe+;
 #pragma link C++ class TrackParameter+;
-#pragma link C++ class NaCardsInput+;
 #pragma link C++ class BeamPipe+;
 #pragma link C++ class Material+;
 #pragma link C++ class NaMixture+;

@@ -20,8 +20,6 @@
 #include <stdio.h>
 
 
-class NaCardsInput;
-
 
 class TrkDetector : public TNamed {
  public:
@@ -37,19 +35,12 @@ class TrkDetector : public TNamed {
   TrkDetector();
   ~TrkDetector();
   //
-  void         ReadMaterials(const char* fname);
-  void         ReadSetup(const char* setup, const char* materials);
-  TObjArray*   GetMaterials() const {return (TObjArray*)&fMaterials;}
-  Material*  GetMaterial(const char* name) const {return (Material*)fMaterials.FindObject(name);}
-  //
   TrkLayer* AddTrkLayer(const char *type, const char *name, Float_t zPos, Float_t radL, Float_t density, Float_t thickness, Float_t xRes=999999, Float_t yRes=999999, Float_t eff=1,Material* mat=0);
-  void         AddBeamPipe(Float_t r, Float_t dr, Float_t radL, Float_t density, Material* mat=0);
-  BeamPipe*    GetBeamPipe() const {return fBeamPipe;}
+  
 
   void         ClassifyTrkLayers();
   void         ResetMCTracks(Int_t maxLr);
   //
-  void     SetApplyBransonPCorrection(float v = 0.1) {fApplyBransonPCorrection = v;} // set to negative to not apply BP correction
   void     SetIncludeVertex(Bool_t v=kTRUE)       {fIncludeVertex = v;}
   Bool_t   GetIncludeVertex()               const {return fIncludeVertex;}
   //-------------------
@@ -60,10 +51,8 @@ class TrkDetector : public TNamed {
   Bool_t SolveSingleTrack(double pt, double yrap, double phi, double mass, int charge, double x=0,double y=0, double z=0, TObjArray* sumArr=0,int nMC=1, int offset=-1);
   Int_t  PropagateToTrkLayer(TrkProbe* trc, TrkLayer* lrFrom, TrkLayer* lrTo, int dir, Bool_t modeMC=kFALSE);
   Bool_t PropagateToZBxByBz(TrkProbe* trc,double z, double maxDZ=1.0, Double_t xOverX0=0., Double_t xTimesRho=0., Bool_t modeMC=kFALSE);
-  Bool_t SolveSingleTrackViaKalmanMC(int offset);
   Bool_t SolveSingleTrackViaKalmanMC_Noam(double pt, double yrap, double phi, double mass, int charge, double x=0,double y=0, double z=0, int offset=-1);
   Bool_t SolveSingleTrackViaKalmanMC_Noam_multiseed(std::vector<TLorentzVector>& pseed, double mass, int charge, int offset=-1, bool doPrint=false);
-  Bool_t TransportKalmanTrackWithMS(TrkProbe *probTr, int maxLr, Bool_t bg=kFALSE);
   Int_t GetFieldReg(double z);
   //-------------------
   TList*       GetTrkLayers()                 const {return (TList*)&fTrkLayers;}
@@ -78,19 +67,6 @@ class TrkDetector : public TNamed {
   //
   TrkProbe* GetTrkProbe()                  const {return (TrkProbe*)&fTrkProbe;}
   Double_t     GetZDecay()                 const {return fZDecay;}
-
-  TrkProbe* GetMuBransonCorrVtx()    const {
-    return fMuTrackBCVertex.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackBCVertex : 0;
-  }
-  TrkProbe* GetMuBransonCorrLastITS()    const {
-    return fMuTrackBCLastITS.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackBCLastITS : 0;
-  }
-  TrkProbe* GetMuLastITS()    const {
-    return fMuTrackLastITS.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackLastITS : 0;
-  }
-  TrkProbe* GetMuVtx()    const {
-    return fMuTrackVertex.GetUniqueID()==0 ? (TrkProbe*)&fMuTrackVertex : 0;
-  }
   
   //
   Bool_t       UpdateTrack(TrkProbe* trc, const TrkLayer* lr, const Cluster* cl) const;
@@ -172,9 +148,7 @@ class TrkDetector : public TNamed {
   Double_t HitDensity(double xLab,double ylab,double zlab) const;
   void     PerformDecay(TrkProbe* trc);
   //
-  float GetChi2MuAtVtx() const {return fChi2MuVtx;}
   
-  TH1*     GetHChi2Branson()    const {return fHChi2Branson;}
   TH2*     GetHChi2LrCorr()    const {return fHChi2LrCorr;}
   TH2*     GetHChi2NDFCorr()   const {return fHChi2NDFCorr;}
   TH2*     GetHChi2NDFFake()   const {return fHChi2NDFFake;}
@@ -208,7 +182,6 @@ class TrkDetector : public TNamed {
   TObjArray fTrkLayersITS;          // vertex tracker layers
   TObjArray fTrkLayersMS;           // MS layers
   TObjArray fTrkLayersTR;           // Trigger layers
-  BeamPipe* fBeamPipe;           // special object - beam pipe
   TrkLayer* fVtx;             // special layer: vertex
   TObjArray fMaterials;                                 // defined materials
   Int_t     fMagFieldID;                                // type of mag field
@@ -222,7 +195,6 @@ class TrkDetector : public TNamed {
   
   Bool_t   fExternalInput; // MC particles are set externally
   Bool_t   fIncludeVertex;
-  float    fApplyBransonPCorrection; // if >=0, apply BP correction with additional error on the vertex
   Bool_t   fUseBackground; // do we want to simulate background?
   // reconstruction settings
   Double_t fErrScale;   // parameter defining the initial cov.matrix error wrt sensor resolution 
@@ -241,8 +213,6 @@ class TrkDetector : public TNamed {
   TH1*     fDecayZProf; // optional decay Z profile
   Double_t fZDecay;     // impose decay here
   Int_t    fDecMode;    // decay mode
-  float fChi2MuVtx; // chi2 of muon at vertex, if Branson correction is on
-  //
   // field stepping optimization
   Int_t     fFldNReg;   // number of field regions
   const Double_t* fFldZMins;  // z of field regions beginning
@@ -271,7 +241,6 @@ class TrkDetector : public TNamed {
 
   //
   // control histos
-  TH1F*    fHChi2Branson;    // chi2 of muon at the vertex
   TH2F*    fHChi2LrCorr;    // chi2 of correct cluster
   TH2F*    fHChi2NDFCorr;   // total chi2 of correct tracks
   TH2F*    fHChi2NDFFake;   // total chi2 of fake tracks
@@ -293,55 +262,6 @@ class TrkDetector : public TNamed {
 
 const double kVeryLarge = 1e16;
 //==========================================================================
-
-class NaCardsInput {
- public:
-  NaCardsInput();
-  NaCardsInput(const char* fname);
-  virtual ~NaCardsInput();
-  FILE* OpenFile(const char* fname);
-  //
-  virtual int FindEntry(const char* key, const char* mod="", 
-			const char* form="", int rew=0, int errmsg=1);
-  virtual int NextEntry(const char* key, const char* mod="",const char* form="");
-  virtual int NextEntry();
-  virtual int GetNArgs() {return fNArgs;}
-  void  Rewind() {if (fCardsFile) rewind(fCardsFile);}
-  void  StepBack() {if (fCardsFile) fseek(fCardsFile, fLastPos, SEEK_SET);}
-  char* GetKey() {return fKey;}
-  char* GetModifier() {return fModifier;}
-  char* GetArg(const int iarg, const char* option="", int *err=0);
-  char* GetArg(char* &dest, const int iarg, const char* option="", int *err=0);
-  float GetArgF(const int iarg, int *err=0);
-  int   GetArgD(const int iarg, int *err=0);
-  unsigned int GetArgB(const int iarg, int *err=0);
-  char  **GetArgs() {return fArgs;} 
-  int   CompareKey(const char *key);
-  int   CompareModifier(const char *mod);
-  int   CompareArgList(const char *form);
-  char* GetLastComment() const {return (char*)fLastComment.Data();}
-  char* GetLastBuffer()  const {return (char*)fbuffer;}
-  virtual void Print();
-  //
- protected:
-  virtual void ClearArgs(); 
- protected:
-  static const char fgkComment='#';   // comment identifier
-  static const char fgkDelimiter=':'; // delimiter between keyword and modifier
-  static const char fgkContinuation='\\'; // delimiter between keyword and modifier
-  static const int  fgkMaxLen = 2048;  // max. length of the entry
-  //
-  FILE* fCardsFile;        // pointer on the opened file
-  long  fLastPos;            // position in the stream of last record read
-  char  fbuffer[fgkMaxLen];// string buffer for current line
-  char* fPoint;            // pointer on the beginning of data in the line
-  int   fNArgs;            // number of the arguments in the entry
-  char** fArgs;            // list of the arguments
-  char* fKey;              // current Key
-  char* fModifier;         // current Modifier
-  TString fLastComment;     // last comments block read
-  //
-};
 
 
 #endif

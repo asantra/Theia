@@ -1,4 +1,7 @@
 #include "Magnets.h"
+#include <TGeoGlobalMagField.h>
+
+ClassImp(Magnets)
 
 Magnets::Magnets() {}
 Magnets::~Magnets() {}
@@ -76,5 +79,7 @@ void Magnets::SetMagneticFieldIrregularity(TString process="bppp"){
     float constmagneticField = (process="bppp") ? 1.7 : 1.0;
     float smearing = 0.5; // smearing in percentage, but this can be a position dependent value. Need to think later
 }
+
+
 
 
