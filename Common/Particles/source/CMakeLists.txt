@@ -6,7 +6,7 @@ file(GLOB SRC
     "src/*.cxx"
 )
 
-root_generate_dictionary(Particles_Dict Particles.h LUXEUtility.h LINKDEF Particles/Particles_LinkDef.h)
+root_generate_dictionary(Particles_Dict Particles.h LINKDEF Particles/Particles_LinkDef.h)
 add_library(Particles SHARED ${SRC} Particles_Dict.cxx)
 
 target_link_libraries(Particles PUBLIC ${ROOT_LIBRARIES})
