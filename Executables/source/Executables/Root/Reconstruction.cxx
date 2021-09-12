@@ -504,46 +504,61 @@ int main(int argc, char *argv[])
 	printf("Program Name Is: %s",argv[0]);
 	if(argc>=2) 
 	{ 
-		std::cout << "Number Of Arguments Passed: " << argc << std::endl; 
-		std::cout << "----Following Are The Command Line Arguments Passed----" << std::endl; 
-		for(argcounter=0;argcounter<argc;argcounter++) 
-		   std::cout << "argv[" << argcounter << "]: " << argv[argcounter] << std::endl;
+		printf("\nNumber Of Arguments Passed: %d",argc); 
+		printf("\n----Following Are The Command Line Arguments Passed----"); 
+		for(argcounter=0;argcounter<argc;argcounter++) printf("\nargv[%d]: %s",argcounter,argv[argcounter]);
+		printf("\n");
 	}
 	//// minimum requirements
 	if(argc<2) { printf("argc<2, exitting now\n"); exit(-1); }
 	//// validate inputs
-	if(argc==2 and !((TString)argv[1]).Contains("-filename=")) { printf("argc=2 but cannot parse %s\n",argv[1]); exit(-1); }
-	if(argc==3 and !((TString)argv[2]).Contains("-signal=")) { printf("argc=3 but cannot parse %s\n",argv[2]); exit(-1); }
-	if(argc==4 and !((TString)argv[3]).Contains("-needFit=")) { printf("argc=4 but cannot parse %s\n",argv[3]); exit(-1); }
-	if(argc==5 and !((TString)argv[4]).Contains("-energyCut=")) { printf("argc=5 but cannot parse %s\n",argv[4]); exit(-1); }
-	if(argc==6 and !((TString)argv[5]).Contains("-Particle=")) { printf("argc=6 but cannot parse %s\n",argv[5]); exit(-1); }
-	if(argc==7 and !((TString)argv[6]).Contains("-ntrk=")) { printf("argc=7 but cannot parse %s\n",argv[6]); exit(-1); }
+	if(argc==2 and !((TString)argv[1]).Contains("-proc=")) { printf("argc=2 but cannot parse %s\n",argv[1]); exit(-1); }
+	if(argc==3 and !((TString)argv[2]).Contains("-evnt=")) { printf("argc=3 but cannot parse %s\n",argv[2]); exit(-1); }
+	if(argc==4 and !((TString)argv[3]).Contains("-ntrk=")) { printf("argc=4 but cannot parse %s\n",argv[3]); exit(-1); }
+	if(argc==5 and !((TString)argv[5]).Contains("-seed=")) { printf("argc=5 but cannot parse %s\n",argv[4]); exit(-1); }
 	//// assign inputs
-    
-	TString filename    = (TString(argv[1])).ReplaceAll("-filename=",""); // mandatory, the file containing the input in txt
-	bool    signal      = (argc>2) ? bool((TString(argv[2])).ReplaceAll("-signal=", "")): 0; //signal or background
-	bool    needFit     = (argc>3) ? bool((TString(argv[3])).ReplaceAll("-needFit=", "")): 0; // need Kalman Fit or not
-	TString energyValue = (argc>4) ? ((TString(argv[4])).ReplaceAll("-energyCut=", "")): "0.0";
-	// std::string s((TString)Form(energyValue));
-	std::string s(energyValue);
-	float   energyCut   = (argc>4) ? std::stof(s) : 0.0; // if energy cut is specified on particles
-    TString Particle    = (argc>5) ? (TString(argv[5]).ReplaceAll("-Particle=", "")) : "Positron"; // if particle is specified
-    int     nMaxBkgTrks = (argc>6) ? toint(((TString)argv[6]).ReplaceAll("-ntrk=","")) : -1;
-
+	TString process = ((TString)argv[1]).ReplaceAll("-proc=",""); // mandatory
+	int     evnt    = (argc>2)     ? toint(((TString)argv[2]).ReplaceAll("-evnt=","")) : -1; // job id [optional]
+	int     nMaxBkgTrks = (argc>3) ? toint(((TString)argv[2]).ReplaceAll("-ntrk=","")) : -1; // job id [optional]
+	int     Seed    = (argc>4)     ? toint(((TString)argv[3]).ReplaceAll("-seed=","")) : 12345; // seed [optional]
 	//// print assigned inputs
-	cout << "filename=" << filename << endl;
-	cout << "signal=" << signal << endl;
-	cout << "needFit=" << needFit << endl;
-	cout << "energyCut=" << energyCut << endl;
-	cout << "Particle=" << Particle << endl;
+	cout << "process=" << process << endl;
+	cout << "evnt=" << evnt << endl;
+	cout << "nMaxBkgTrks=" << nMaxBkgTrks << endl;
+	cout << "Seed=" << Seed << endl;
 	
 	
-	TString process= "bppp";
+	// TString proc = process;
+	TString eventid = (evnt<0) ? "" : FormatEventID(evnt);
 	TStopwatch stopwatch;
-	TString setup = "../setup/setupLUXE_.txt";
+	TString setup = "../setup/setupLUXE_"+process+".txt";
+	det = new TrkDetector();
+	det->ReadSetup(setup,setup);
+	det->ForceLastActiveLayer(det->GetLastActiveLayerITS()); // will not propagate beyond VertexTelescope
+	det->SetMinITSHits(det->GetNumberOfActiveLayersITS()); // require hit in every layer
+	det->SetMinMSHits(0); // we don't have muon spectrometer
+	det->SetMinTRHits(0); // we don't have muon trigger stations
+	// max number of seeds on each layer to propagate (per muon track)
+	det->SetMaxSeedToPropagate(3000); // relevant only if backgrount is considered
+	// set chi2 cuts
+	// det->SetMaxChi2Cl(10.);  // max track to cluster chi2
+	det->SetMaxChi2Cl(10.);  // max track to cluster chi2
+	// det->SetMaxChi2NDF(3.5); // max total chi2/ndf
+	det->SetMaxChi2NDF((process=="trident")?15.:5.); // max total chi2/ndf
+	det->SetMaxChi2Vtx(20e9);  // fiducial cut on chi2 of convergence to vtx
+	// det->SetMaxChi2Vtx(500);  // fiducial cut on chi2 of convergence to vtx
+	// IMPORTANT FOR NON-UNIFORM FIELDS
+	det->SetDefStepAir(1);
+	det->SetMinP2Propagate(0.3); //NA60+
+	det->SetIncludeVertex(kTRUE); // count vertex as an extra measured point
+	det->ImposeVertex(0.,0.,0.); // the vertex position is imposed NOAM
+	det->SetApplyBransonPCorrection(-1); // Branson correction, only relevant for setup with MS
+	// for reconstruction:
+	// det->SetErrorScale(500.);
+	det->SetErrorScale( (process=="trident")?500.:200. );
+	det->Print();
 	// det->BookControlHistos();
 	
-	/// no need now
 	zlayer->push_back(0);   //// NOAM --> GET FROM THE SETUP --> IP (vertex)
 	zlayer->push_back(100); //// NOAM --> GET FROM THE SETUP --> start of dipol
 	zlayer->push_back(200); //// NOAM --> GET FROM THE SETUP --> end of dipol
@@ -552,17 +567,15 @@ int main(int argc, char *argv[])
 	zlayer->push_back(320); //// NOAM --> GET FROM THE SETUP --> layer 3
 	zlayer->push_back(330); //// NOAM --> GET FROM THE SETUP --> layer 4
 
-	int outN = 10;
-	B = 1.7;
-    
-	/*
+	int outN = (process=="trident") ? 10 : 10;
+	B = (process=="trident") ? 1.0 : 1.7;
+
 	if(process=="trident")
 	{
 		resetToTridentGeometry();
 		cout << "Doing only Pside!" << endl;
 		sides.clear(); sides.push_back("Pside"); /// do not reconstruct the Eside
 	}
-	*/
 
 	/// get the signal clusters
 	cout << "Getting signal clusters from tree" << endl;
