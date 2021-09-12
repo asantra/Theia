@@ -532,10 +532,10 @@ int main(int argc, char *argv[])
 	TString eventid = (evnt<0) ? "" : FormatEventID(evnt);
 	TStopwatch stopwatch;
 	TString setup = "../setup/setupLUXE_"+process+".txt";
-	det = new TrkDetector();
+	det = new TrkDetector("test_detector", "test_detector");
 	det->ReadSetup(setup,setup);
-	det->ForceLastActiveLayer(det->GetLastActiveLayerITS()); // will not propagate beyond VertexTelescope
-	det->SetMinITSHits(det->GetNumberOfActiveLayersITS()); // require hit in every layer
+	det->ForceLastActiveTrkLayer(det->GetLastActiveTrkLayerITS()); // will not propagate beyond VertexTelescope
+	det->SetMinITSHits(det->GetNumberOfActiveTrkLayersITS()); // require hit in every layer
 	det->SetMinMSHits(0); // we don't have muon spectrometer
 	det->SetMinTRHits(0); // we don't have muon trigger stations
 	// max number of seeds on each layer to propagate (per muon track)
