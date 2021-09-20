@@ -5,7 +5,7 @@
 ## set the path of Theia directory
 ## This variable is needed in the CMakeLists.txt
 export THEIAPATH=$PWD
-export STORAGEDIR=$PWD/Executables/source/Executables
+export STORAGEDIR=$PWD/Tracker/source
 echo "Setting the THEIAPATH to "$THEIAPATH
 echo "Setting the STORAGEDIR to "$STORAGEDIR
 
