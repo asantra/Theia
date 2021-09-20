@@ -12,4 +12,6 @@ Makefile
 *.dylib
 *S_Store
 *.code-workspace
+*.root
+*.pdf
 

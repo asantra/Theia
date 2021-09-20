@@ -531,9 +531,11 @@ int main(int argc, char *argv[])
 	// TString proc = process;
 	TString eventid = (evnt<0) ? "" : FormatEventID(evnt);
 	TStopwatch stopwatch;
-	TString setup = "../setup/setupLUXE_"+process+".txt";
-	det = new TrkDetector("test_detector", "test_detector");
+	TString setup = storage+"/setup/setupLUXE_"+process+".txt";
+	cout << " The setup : " << setup << endl;
+	det = new TrkDetector("test_detector", "detector");
 	det->ReadSetup(setup,setup);
+	cout << "After read setup : " << setup << endl;
 	det->ForceLastActiveTrkLayer(det->GetLastActiveTrkLayerITS()); // will not propagate beyond VertexTelescope
 	det->SetMinITSHits(det->GetNumberOfActiveTrkLayersITS()); // require hit in every layer
 	det->SetMinMSHits(0); // we don't have muon spectrometer
@@ -559,6 +561,7 @@ int main(int argc, char *argv[])
 	det->Print();
 	// det->BookControlHistos();
 	
+	
 	zlayer->push_back(0);   //// NOAM --> GET FROM THE SETUP --> IP (vertex)
 	zlayer->push_back(100); //// NOAM --> GET FROM THE SETUP --> start of dipol
 	zlayer->push_back(200); //// NOAM --> GET FROM THE SETUP --> end of dipol
@@ -579,7 +582,7 @@ int main(int argc, char *argv[])
 
 	/// get the signal clusters
 	cout << "Getting signal clusters from tree" << endl;
-	TFile* fSig = new TFile(storage+"/data/root/dig/dig_sig.root","READ");
+	TFile* fSig = new TFile(storage+"/data/dig_"+process+".root","READ");
 	TTree* tSig = (TTree*)fSig->Get("dig");
 	int                      sig_ngen          = 0;
 	int                      sig_nslv          = 0;
@@ -619,7 +622,7 @@ int main(int argc, char *argv[])
 	// cout << "---- TChain content ----" << endl;
 	// tBkg->ls();
 	// cout << "------------------------" << endl;
-	TFile* fBkg = new TFile(storage+"/data/root/dig/dig_bkg.root","READ");
+	TFile* fBkg = new TFile(storage+"/data/dig_"+process+"_bkg.root","READ");
 	TTree* tBkg = (TTree*)fBkg->Get("dig");
 	int                      bkg_ngen          = 0;
 	int                      bkg_nslv          = 0;
@@ -659,8 +662,8 @@ int main(int argc, char *argv[])
 	gInterpreter->GenerateDictionary("vector<TPolyMarker3D*>", "vector");
 	gInterpreter->GenerateDictionary("vector<TPolyLine3D*>",   "vector");
 	gInterpreter->GenerateDictionary("vector<vector<int> >",   "vector");
-	gSystem->Exec("mkdir -p "+storage+"/data/root/rec");
-	TFile* fOut = new TFile(storage+"/data/root/rec/rec.root","RECREATE");
+	gSystem->Exec("mkdir -p "+storage+"/data/rec");
+	TFile* fOut = new TFile(storage+"/data/rec/rec_"+process+".root","RECREATE");
 	TTree* tOut = new TTree("reco","reco");
 	/// all clusters output branches
 	vector<TPolyMarker3D*>  all_clusters_xyz;

@@ -77,7 +77,7 @@ TrkDetector::TrkDetector(const char *name, const char *title)
   fRefVtx[0] = fRefVtx[1] = fRefVtx[2] = 0;
 }
 
-TrkDetector::TrkDetector() {}
+//TrkDetector::TrkDetector() {}
 TrkDetector::~TrkDetector() { // 
   // virtual destructor
   //
@@ -136,6 +136,7 @@ void TrkDetector::ReadMaterials(const char* fnam)
   //
   TObjArray* arr = &fMaterials;
   //
+  
   // loop over all materials
   while( (narg = inp->FindEntry(keyMat,modMat,formMat,0,1))>-1 ) {
     name = inp->GetArg(0,"U"); // convert material name to upper case
@@ -144,13 +145,19 @@ void TrkDetector::ReadMaterials(const char* fnam)
     }
     Float_t* elbuf = 0;
     if ( narg>kMinArgMat ) {
-      for (int i=0;i<Material::kNELossPar;i++) arg[i]=inp->GetArgF(kMinArgMat+i); // ELoss supplied
+      /// Arka: chnage Material::kNELossPar to Material::kNELossPar-1 to avoid break
+      for (int i=0;i<Material::kNELossPar-1;i++){
+        arg[i]=inp->GetArgF(kMinArgMat+i); // ELoss supplied
+      }
       elbuf = arg;
     }
+    
     arr->AddLast(new Material(name,name,inp->GetArgF(1),inp->GetArgF(2),
 				inp->GetArgF(3),inp->GetArgF(4),inp->GetArgF(5),elbuf));
+    
   }
   //
+  
   inp->Rewind(); // rewind the file
   // loop over all mixtures
   while( (narg = inp->FindEntry(keyMix,modMix,formMix,0,1))>-1 ) {

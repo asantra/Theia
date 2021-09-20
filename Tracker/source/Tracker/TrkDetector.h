@@ -34,24 +34,24 @@ class TrkDetector : public TNamed {
   enum {kMagAlice=-1};
   enum {kNoDecay,kDoRealDecay,kApplyDecay};
   TrkDetector(const char *name="test_detector", const char *title="detector");
-  TrkDetector();
+  //TrkDetector();
   ~TrkDetector();
   //
   void         ReadMaterials(const char* fname);
   void         ReadSetup(const char* setup, const char* materials);
   TObjArray*   GetMaterials() const {return (TObjArray*)&fMaterials;}
-  Material*  GetMaterial(const char* name) const {return (Material*)fMaterials.FindObject(name);}
+  Material*    GetMaterial(const char* name) const {return (Material*)fMaterials.FindObject(name);}
   //
-  TrkLayer* AddTrkLayer(const char *type, const char *name, Float_t zPos, Float_t radL, Float_t density, Float_t thickness, Float_t xRes=999999, Float_t yRes=999999, Float_t eff=1,Material* mat=0);
+  TrkLayer*    AddTrkLayer(const char *type, const char *name, Float_t zPos, Float_t radL, Float_t density, Float_t thickness, Float_t xRes=999999, Float_t yRes=999999, Float_t eff=1,Material* mat=0);
   void         AddBeamPipe(Float_t r, Float_t dr, Float_t radL, Float_t density, Material* mat=0);
   BeamPipe*    GetBeamPipe() const {return fBeamPipe;}
 
   void         ClassifyTrkLayers();
   void         ResetMCTracks(Int_t maxLr);
   //
-  void     SetApplyBransonPCorrection(float v = 0.1) {fApplyBransonPCorrection = v;} // set to negative to not apply BP correction
-  void     SetIncludeVertex(Bool_t v=kTRUE)       {fIncludeVertex = v;}
-  Bool_t   GetIncludeVertex()               const {return fIncludeVertex;}
+  void         SetApplyBransonPCorrection(float v = 0.1) {fApplyBransonPCorrection = v;} // set to negative to not apply BP correction
+  void         SetIncludeVertex(Bool_t v=kTRUE)       {fIncludeVertex = v;}
+  Bool_t       GetIncludeVertex()               const {return fIncludeVertex;}
   //-------------------
   void         CreateTrkProbe(TrkProbe* adr, double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
   TrkProbe* CreateTrkProbe(double pt, double yrap, double phi, double mass, int charge, double x,double y, double z);
