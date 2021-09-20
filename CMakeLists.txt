@@ -25,4 +25,4 @@ add_subdirectory(Common/Magnets/source)
 add_subdirectory(Common/Particles/source)
 add_subdirectory(Common/Plotting/source)
 add_subdirectory(Tracker/source)
-add_subdirectory(Executables/source)
+
