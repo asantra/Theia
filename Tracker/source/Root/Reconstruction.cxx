@@ -582,7 +582,7 @@ int main(int argc, char *argv[])
 
 	/// get the signal clusters
 	cout << "Getting signal clusters from tree" << endl;
-	TFile* fSig = new TFile(storage+"/data/dig_"+process+".root","READ");
+	TFile* fSig = new TFile(storage+"/data/root/dig/dig_"+process+"_.root","READ");
 	TTree* tSig = (TTree*)fSig->Get("dig");
 	int                      sig_ngen          = 0;
 	int                      sig_nslv          = 0;
@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
 	// cout << "---- TChain content ----" << endl;
 	// tBkg->ls();
 	// cout << "------------------------" << endl;
-	TFile* fBkg = new TFile(storage+"/data/dig_"+process+"_bkg.root","READ");
+	TFile* fBkg = new TFile(storage+"/data/root/dig/dig_"+process+"_bkg.root","READ");
 	TTree* tBkg = (TTree*)fBkg->Get("dig");
 	int                      bkg_ngen          = 0;
 	int                      bkg_nslv          = 0;
@@ -875,7 +875,7 @@ int main(int argc, char *argv[])
 		//// get the next input entry
 		tSig->GetEntry(iev); /// signal
 		tBkg->GetEntry(iev); /// background
-		
+		std::cout << "Inside event loop with iev " << iev << std::endl;
 		////////////////////////////////////////////
 		/// clear output vectors: digitized clusters
 		for(unsigned int x=0 ; x<all_clusters_xyz.size() ; ++x) delete all_clusters_xyz[x];
@@ -952,7 +952,7 @@ int main(int argc, char *argv[])
 		reco_invpT.clear();
 		reco_signedpT.clear();
 		
-		
+		std::cout << "Clear all vectors " << iev << std::endl;
 		//// clear cached clusters
 		clear_cached_clusters(); /// clear for both sides
 		
@@ -976,7 +976,7 @@ int main(int argc, char *argv[])
 			true_trcklin.push_back( sig_trklin->at(t) );
 			true_rec_imatch.push_back( vitmp );
 		}
-		
+		std::cout << "filling truth signal tracks " << iev << std::endl;
 		/// fill truth background tracks:
 		int nbtrks = (int)bkg_crg->size();
 		int nbmax = (nMaxBkgTrks>0 && nMaxBkgTrks<nbtrks) ? nMaxBkgTrks : nbtrks;
@@ -1002,13 +1002,13 @@ int main(int argc, char *argv[])
 			// }
 		    bkgr_trcklin.push_back( bkg_trklin->at(b) );
 		}
-		
+		std::cout << "filling truth bkg tracks " << iev << std::endl;
 		/////////////////////
 		/// loop on the sides
 		for(unsigned int s=0 ; s<sides.size() ; ++s)
 		{
 			TString side = sides[s];
-			
+			std::cout << "loop on sides " << iev << std::endl;
 			/// clear this side's indices
 			cached_clusters_all_ids.clear();
 			
@@ -1031,7 +1031,7 @@ int main(int argc, char *argv[])
 				if(side=="Pside" and true_q[t]<0) continue;
 				n_truth++;
 			}
-		   
+		    std::cout << "make pool of signal clusters " << iev << std::endl;
 			/// make a pool of all signal clusters
 			int ncached_signal_clusters = cache_clusters(sig_clusters_xyz,sig_clusters_type,sig_clusters_id,side);
 
@@ -1051,7 +1051,7 @@ int main(int argc, char *argv[])
 			
 			/// offset for signal id's !!!
 			int sigoffset = 100000; // should be multiplied by the layer number
-			
+			std::cout << "run over all clusters of layer 4 " << iev << std::endl;
 			/// run over all clusters of layer 4 in the pool --> these are the seeds for the KalmanFilter fit
 			for(unsigned int i4=0 ; i4<cached_clusters_xyz["x_L4_"+side].size() ; ++i4)
 			// for(unsigned int i4=0 ; i4<1 ; ++i4)
@@ -1060,6 +1060,7 @@ int main(int argc, char *argv[])
 				reset_layers_tracks();
 				
 				vector<TLorentzVector> pseeds;
+				std::cout << "run over all clusters of layer 1 " << iev << std::endl;
 				for(unsigned int i1=0 ; i1<cached_clusters_xyz["x_L1_"+side].size() ; ++i1)
 				{	
 					// reset all tracks from all layers but layer 0
@@ -1091,7 +1092,7 @@ int main(int argc, char *argv[])
 				bool doPrint = false;
 				if(doPrint) cout << "\n\n\n########################################## calling SolveSingleTrackViaKalmanMC_Noam_multiseed for i4=" << i4 << " ######################################" << endl;
 				// prepare the probe from the seed and do the KF fit
-				
+				std::cout << "solve clusters with KalmanFilter " << iev << std::endl;
 				bool solved = det->SolveSingleTrackViaKalmanMC_Noam_multiseed(pseeds,meGeV,crg,99,doPrint);
 				if(!solved) continue; // reconstruction failed
 				n_solve++;
@@ -1120,10 +1121,13 @@ int main(int argc, char *argv[])
 				if(win_cls_id3>0) { det->GetTrkLayer(5)->GetBgCluster( win_cls_inx3 )->Kill(); }
 				if(win_cls_id4>0) { det->GetTrkLayer(7)->GetBgCluster( win_cls_inx4 )->Kill(); }
 				if(doPrint) det->CheckClusters(win_cls_inx1,win_cls_inx2,win_cls_inx3,win_cls_inx4);
-				
+				std::cout << "after killing clusters " << iev << std::endl;
+
+
 				vector<int> vrecid{ win_cls_id1,win_cls_id2,win_cls_id3,win_cls_id4 };
 				reco_clusters_id.push_back( vrecid );
-				
+				std::cout << "after pushing winner clusters " << iev << std::endl;
+
 				TLorentzVector prec;
 				double pxyz[3];
 				double xyz[3];
@@ -1191,7 +1195,8 @@ int main(int argc, char *argv[])
 				
 				pseeds.clear(); /// this is maybe redundant
 			} // end of loop on clusters in layer 4
-			
+			std::cout << "after loop on clusters in layer 4 " << iev << std::endl;
+
 			////////////////////////////////////////////////////////////
 			/// post-processing per side histos to fill
 			for(unsigned int t=0 ; t<true_q.size() ; ++t)

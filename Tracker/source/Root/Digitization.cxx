@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 	TString eventid = (evnt<0) ? "" : FormatEventID(evnt);
 	TString proc = process;
 	proc.ReplaceAll("_bkg","");
-	TString setup = storage+"/setup/setupLUXE_"+process+".txt";
+	TString setup = storage+"/setup/setupLUXE_"+proc+".txt";
    gRandom->SetSeed(Seed);  
    det = new TrkDetector();
    det->ReadSetup(setup,setup);
